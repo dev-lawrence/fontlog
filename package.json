@@ -1,0 +1,39 @@
+{
+  "name": "fontlog",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A curated log of open-license typefaces for developers tired of using the same font.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "format": "prettier --write \"**/*.{astro,ts,tsx,js,mjs,json,md,mdx,css}\"",
+    "format:check": "prettier --check \"**/*.{astro,ts,tsx,js,mjs,json,md,mdx,css}\""
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.2.6",
+    "@astrojs/react": "^4.2.7",
+    "@astrojs/sitemap": "^3.4.0",
+    "@fontsource-variable/funnel-sans": "^5.2.5",
+    "@hugeicons/core-free-icons": "^1.0.13",
+    "astro": "^5.7.13",
+    "astro-og-canvas": "^0.7.0",
+    "canvaskit-wasm": "^0.39.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@tailwindcss/vite": "^4.1.6",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "prettier": "^3.5.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "sharp": "^0.35.4",
+    "tailwindcss": "^4.1.6",
+    "typescript": "^5.8.3"
+  }
+}

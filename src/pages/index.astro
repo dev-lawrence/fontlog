@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FontFilters from '../components/FontFilters.astro';
+import { getFonts } from '../lib/fonts';
+import { listStylesheet, fontLinks } from '../lib/gfonts';
+import { CLASSIFICATIONS, MOODS, type Classification, type Mood } from '../data/moods';
+import { SITE } from '../consts';
+
+const fonts = await getFonts();
+
+const classifications = CLASSIFICATIONS.filter((c) =>
+  fonts.some((f) => f.data.classification === c),
+) as Classification[];
+const moods = MOODS.filter((m) => fonts.some((f) => f.data.moods.includes(m))) as Mood[];
+
+const headExtra = fontLinks(listStylesheet(fonts.map((f) => f.data)));
+---
+
+<BaseLayout headExtra={headExtra}>
+  <section class="mb-14 max-w-2xl">
+    <h1 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+      Fonts I&rsquo;ve used, so you don&rsquo;t have to reach for the same one again.
+    </h1>
+    <p class="text-muted mt-4 text-lg text-pretty">
+      {SITE.tagline} Every entry is open-license, with a live preview, real sites using it, the license
+      in plain English, and the exact command to install it.
+    </p>
+  </section>
+
+  <FontFilters classifications={classifications} moods={moods} total={fonts.length} />
+
+  <ul class="border-border border-t">
+    {
+      fonts.map((font) => (
+        <li
+          data-font
+          data-classification={font.data.classification}
+          data-moods={font.data.moods.join(' ')}
+        >
+          <a
+            href={`/fonts/${font.id}`}
+            class="group border-border block border-b py-7 transition-colors sm:py-9"
+          >
+            <span
+              class="text-text block text-[13vw] leading-none sm:text-6xl"
+              style={`font-family:"${font.data.family}"; font-weight:${font.data.featuredWeight}`}
+            >
+              {font.data.name}
+            </span>
+            <span class="text-muted mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span class="text-[15px] text-pretty">{font.data.blurb}</span>
+            </span>
+            <span class="text-faint mt-3 flex flex-wrap gap-1.5 text-xs">
+              <span class="border-border rounded border px-1.5 py-0.5 capitalize">
+                {font.data.classification}
+              </span>
+              {font.data.moods.map((m) => (
+                <span class="border-border rounded border px-1.5 py-0.5">{m}</span>
+              ))}
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="text-muted hidden py-16 text-center" data-empty>Nothing matches those filters yet.</p>
+</BaseLayout>
+
+<script>
+  // Show the empty-state line when every row is hidden.
+  const list = document.querySelector('ul');
+  const empty = document.querySelector<HTMLElement>('[data-empty]');
+  const rows = [...document.querySelectorAll<HTMLElement>('[data-font]')];
+  const observer = new MutationObserver(() => {
+    const anyVisible = rows.some((r) => !r.hidden);
+    empty?.classList.toggle('hidden', anyVisible);
+    list?.classList.toggle('hidden', !anyVisible);
+  });
+  for (const r of rows) observer.observe(r, { attributes: true, attributeFilter: ['hidden'] });
+</script>

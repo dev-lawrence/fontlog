@@ -1,0 +1,118 @@
+---
+import { CLASSIFICATION_LABELS, type Classification, type Mood } from '../data/moods';
+
+interface Props {
+  classifications: Classification[];
+  moods: Mood[];
+  total: number;
+}
+
+const { classifications, moods, total } = Astro.props;
+---
+
+<div class="mb-10" data-filters>
+  <div class="flex flex-wrap items-center gap-1.5">
+    {
+      classifications.map((c) => (
+        <button
+          type="button"
+          class="chip"
+          data-filter="classification"
+          data-value={c}
+          aria-pressed="false"
+        >
+          {CLASSIFICATION_LABELS[c]}
+        </button>
+      ))
+    }
+    <span class="bg-border mx-1 h-4 w-px" aria-hidden="true"></span>
+    {
+      moods.map((m) => (
+        <button type="button" class="chip" data-filter="mood" data-value={m} aria-pressed="false">
+          {m}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="text-muted mt-3 flex items-center gap-3 text-sm">
+    <span data-count>{total} typefaces</span>
+    <button type="button" class="hover:text-text hidden underline underline-offset-4" data-clear>
+      Clear filters
+    </button>
+  </div>
+</div>
+
+<style>
+  .chip {
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+    transition:
+      color 0.15s,
+      border-color 0.15s,
+      background-color 0.15s;
+    text-transform: capitalize;
+  }
+  .chip:hover {
+    color: var(--color-text);
+  }
+  .chip[aria-pressed='true'] {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-filters]');
+  if (root) {
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('.chip')];
+    const countEl = root.querySelector<HTMLElement>('[data-count]');
+    const clearBtn = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const rows = [...document.querySelectorAll<HTMLElement>('[data-font]')];
+
+    const active = { classification: new Set<string>(), mood: new Set<string>() };
+
+    function apply() {
+      let shown = 0;
+      for (const row of rows) {
+        const cls = row.dataset.classification ?? '';
+        const moods = (row.dataset.moods ?? '').split(' ').filter(Boolean);
+        const okCls = active.classification.size === 0 || active.classification.has(cls);
+        const okMood = active.mood.size === 0 || [...active.mood].some((m) => moods.includes(m));
+        const visible = okCls && okMood;
+        row.hidden = !visible;
+        if (visible) shown++;
+      }
+      if (countEl) {
+        const filtered = active.classification.size + active.mood.size > 0;
+        countEl.textContent = filtered
+          ? `${shown} of ${rows.length} typefaces`
+          : `${rows.length} typefaces`;
+      }
+      clearBtn?.classList.toggle('hidden', active.classification.size + active.mood.size === 0);
+    }
+
+    for (const chip of chips) {
+      chip.addEventListener('click', () => {
+        const type = chip.dataset.filter as 'classification' | 'mood';
+        const value = chip.dataset.value!;
+        const set = active[type];
+        if (set.has(value)) set.delete(value);
+        else set.add(value);
+        chip.setAttribute('aria-pressed', String(set.has(value)));
+        apply();
+      });
+    }
+
+    clearBtn?.addEventListener('click', () => {
+      active.classification.clear();
+      active.mood.clear();
+      for (const chip of chips) chip.setAttribute('aria-pressed', 'false');
+      apply();
+    });
+  }
+</script>

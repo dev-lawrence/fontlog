@@ -1,0 +1,44 @@
+---
+/**
+ * Renders a Hugeicons icon object (`import { Sun03Icon } from '@hugeicons/core-free-icons'`).
+ * Each icon is an array of `[tag, attributes]` tuples with camelCased SVG attrs.
+ */
+type IconNode = ReadonlyArray<readonly [string, Readonly<Record<string, string | number>>]>;
+
+interface Props {
+  icon: IconNode;
+  size?: number;
+  label?: string;
+  class?: string;
+  strokeWidth?: number;
+}
+
+const { icon, size = 20, label, class: className, strokeWidth } = Astro.props;
+
+const toKebab = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+
+const inner = icon
+  .map(([tag, attrs]) => {
+    const pairs = Object.entries(attrs)
+      .filter(([k]) => k !== 'key')
+      .map(([k, v]) => {
+        if (k === 'strokeWidth' && strokeWidth != null) v = strokeWidth;
+        return `${toKebab(k)}="${v}"`;
+      });
+    return `<${tag} ${pairs.join(' ')} />`;
+  })
+  .join('');
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  class={className}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  set:html={inner}
+/>

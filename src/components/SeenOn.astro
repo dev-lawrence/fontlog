@@ -1,0 +1,83 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons';
+
+interface SeenOnItem {
+  site: string;
+  url: string;
+  image?: string;
+  usage?: string;
+  captured: string;
+}
+
+interface Props {
+  items: SeenOnItem[];
+}
+
+const { items } = Astro.props;
+
+const globbed = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/assets/seen-on/*.{webp,png,jpg,jpeg,avif}',
+);
+
+const resolved = await Promise.all(
+  items.map(async (item) => {
+    const key = item.image ? `/src/assets/seen-on/${item.image}` : null;
+    const loader = key ? globbed[key] : undefined;
+    const image = loader ? (await loader()).default : null;
+    return { ...item, resolvedImage: image };
+  }),
+);
+
+const monthFmt = (ym: string) => {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(y, m - 1).toLocaleDateString('en', { month: 'short', year: 'numeric' });
+};
+---
+
+<ul class="grid gap-4 sm:grid-cols-2">
+  {
+    resolved.map((item) => (
+      <li>
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="group border-border bg-surface hover:border-accent block overflow-hidden rounded-lg border transition"
+        >
+          <div class="bg-bg aspect-[16/10] overflow-hidden">
+            {item.resolvedImage ? (
+              <Image
+                src={item.resolvedImage}
+                alt={`${item.site} — using the typeface`}
+                widths={[400, 800]}
+                sizes="(min-width: 640px) 33rem, 90vw"
+                class="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.02]"
+              />
+            ) : (
+              <div class="text-faint flex h-full w-full items-center justify-center text-xs">
+                screenshot pending
+              </div>
+            )}
+          </div>
+          <div class="flex items-start justify-between gap-3 px-3.5 py-3">
+            <div>
+              <p class="flex items-center gap-1 font-medium">
+                {item.site}
+                <Icon
+                  icon={ArrowUpRight01Icon}
+                  size={15}
+                  class="text-faint group-hover:text-accent transition"
+                />
+              </p>
+              <p class="text-muted text-[13px]">
+                {item.usage ?? 'in use'} &middot; {monthFmt(item.captured)}
+              </p>
+            </div>
+          </div>
+        </a>
+      </li>
+    ))
+  }
+</ul>

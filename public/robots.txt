@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fontlog.dev/sitemap-index.xml

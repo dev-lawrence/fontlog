@@ -1,0 +1,26 @@
+---
+import Icon from './Icon.astro';
+import { Sun03Icon, Moon02Icon } from '@hugeicons/core-free-icons';
+---
+
+<button
+  id="theme-toggle"
+  type="button"
+  class="text-muted hover:bg-surface hover:text-text grid h-8 w-8 place-items-center rounded-md transition"
+  aria-label="Toggle light and dark theme"
+>
+  <Icon icon={Sun03Icon} size={18} class="hidden dark:block" />
+  <Icon icon={Moon02Icon} size={18} class="block dark:hidden" />
+</button>
+
+<script>
+  const btn = document.getElementById('theme-toggle');
+  btn?.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    try {
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    } catch {
+      /* storage blocked */
+    }
+  });
+</script>

@@ -1,0 +1,80 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import { SITE } from '../consts';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Absolute or root-relative path to an OG image. */
+  ogImage?: string;
+  /** Extra <link> / <style> for the <head>, e.g. a Google Fonts stylesheet. */
+  headExtra?: string;
+}
+
+const { title, description = SITE.description, ogImage = '/og/_site.png', headExtra } = Astro.props;
+
+const pageTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const ogImageUrl = new URL(ogImage, SITE.url).href;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="canonical" href={canonical} />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title ?? SITE.name} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title ?? SITE.name} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <script is:inline>
+      (() => {
+        try {
+          const stored = localStorage.getItem('theme');
+          const dark = stored
+            ? stored === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.classList.toggle('dark', dark);
+        } catch {}
+      })();
+    </script>
+
+    {headExtra && <Fragment set:html={headExtra} />}
+  </head>
+
+  <body class="flex min-h-dvh flex-col">
+    <SiteHeader />
+
+    <main class="container-page flex-1 py-10 sm:py-14">
+      <slot />
+    </main>
+
+    <footer class="border-border border-t">
+      <div
+        class="container-page text-muted flex flex-col gap-1 py-8 text-sm sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p>
+          Fontlog — a personal log by {SITE.author}. Every font is open-license; the notes are
+          opinions.
+        </p>
+        <p>&copy; {year}</p>
+      </div>
+    </footer>
+  </body>
+</html>

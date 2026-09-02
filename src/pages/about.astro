@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getFonts } from '../lib/fonts';
+import { MOODS } from '../data/moods';
+
+const count = (await getFonts()).length;
+---
+
+<BaseLayout
+  title="About"
+  description="Why Fontlog exists, how fonts get in, and what the notes mean."
+>
+  <div class="prose max-w-2xl">
+    <h1 class="text-3xl font-semibold tracking-tight">About Fontlog</h1>
+
+    <p>
+      For years I set every project in Bricolage Grotesque. Not because I'd compared it against
+      anything &mdash; it just looked right, and picking a font is the kind of small decision that
+      quietly eats an evening. Every few months I'd go looking for something new, bounce between a
+      dozen tabs of specimens, licenses I couldn't parse, and install instructions that assumed I
+      was buying a desktop license, and give up.
+    </p>
+
+    <p>
+      Fontlog is the thing I wanted instead: a short, opinionated list of open-license typefaces
+      I've actually used or seriously evaluated. Not a directory of everything &mdash; Google Fonts
+      already does that. Every entry here is one I'd ship.
+    </p>
+
+    <h2>How a font gets in</h2>
+    <p>
+      I've used it on a real project, or I've sat with it long enough to have a genuine opinion.
+      That's the whole bar. If it's here, there's a reason, and the note on its page says what it is
+      &mdash; including what to watch out for.
+    </p>
+
+    <h2>What's on each page</h2>
+    <ul>
+      <li>A live preview you can type your own text into.</li>
+      <li>The license in one plain-English sentence, with a link to the real thing.</li>
+      <li>
+        Copy-paste install snippets: npm / Fontsource, <code>next/font</code>, Google Fonts, and a
+        self-host template.
+      </li>
+      <li>Real sites using the font, when I've found good ones.</li>
+      <li>A few &ldquo;if you like this, try&rdquo; pointers.</li>
+    </ul>
+
+    <h2>The tags</h2>
+    <p>
+      Every font has a classification (sans, serif, mono, display) and one or more moods &mdash;
+      {MOODS.slice(0, -1).join(', ')}, or {MOODS.at(-1)}. They're deliberately vague, because
+      &ldquo;I want something warmer&rdquo; is usually how the search actually starts. Use the
+      filters on the home page to narrow things down.
+    </p>
+
+    <h2>Everything is open</h2>
+    <p>
+      Every typeface listed is free for commercial use under an open license (mostly the SIL Open
+      Font License). No paid fonts, no affiliate links. The catalogue is small on purpose &mdash;
+      {count} right now &mdash; and grows only when I find something worth adding.
+    </p>
+  </div>
+</BaseLayout>

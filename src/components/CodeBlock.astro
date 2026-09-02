@@ -1,0 +1,64 @@
+---
+import Icon from './Icon.astro';
+import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+
+interface Props {
+  code: string;
+  lang?: string;
+  label?: string;
+  note?: string;
+}
+
+const { code, lang = 'text', label, note } = Astro.props;
+---
+
+<figure class="border-border bg-surface rounded-lg border">
+  {
+    label && (
+      <figcaption class="border-border text-muted flex items-center justify-between border-b px-4 py-2 text-xs font-medium tracking-wide uppercase">
+        <span>{label}</span>
+        <span class="text-faint normal-case">{lang}</span>
+      </figcaption>
+    )
+  }
+  <div class="relative">
+    <pre
+      class="overflow-x-auto px-4 py-3.5 font-mono text-[13px] leading-relaxed"
+      data-code><code>{code}</code></pre>
+    <button
+      type="button"
+      data-copy
+      class="border-border bg-bg text-muted hover:text-text absolute top-2.5 right-2.5 grid h-8 w-8 place-items-center rounded-md border transition"
+      aria-label="Copy to clipboard"
+    >
+      <Icon icon={Copy01Icon} size={15} class="i-copy" />
+      <Icon icon={Tick02Icon} size={15} class="i-check hidden" />
+    </button>
+  </div>
+  {note && <p class="border-border text-muted border-t px-4 py-2.5 text-[13px]">{note}</p>}
+</figure>
+
+<style>
+  button[data-copied] .i-copy {
+    display: none;
+  }
+  button[data-copied] .i-check {
+    display: block;
+    color: var(--color-accent);
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const code = btn.parentElement?.querySelector('[data-code]')?.textContent ?? '';
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.dataset.copied = 'true';
+        window.setTimeout(() => delete btn.dataset.copied, 1500);
+      } catch {
+        /* clipboard blocked — no-op */
+      }
+    });
+  });
+</script>

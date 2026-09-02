@@ -1,0 +1,42 @@
+---
+import Icon from './Icon.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { TextFontIcon, GithubIcon } from '@hugeicons/core-free-icons';
+import { SITE } from '../consts';
+
+const path = Astro.url.pathname;
+const isHome = path === '/';
+---
+
+<header class="border-border bg-bg/80 sticky top-0 z-40 border-b backdrop-blur-md">
+  <div class="container-page flex h-16 items-center justify-between">
+    <a
+      href="/"
+      class="flex items-center gap-2 font-semibold tracking-tight"
+      aria-current={isHome ? 'page' : undefined}
+    >
+      <Icon icon={TextFontIcon} size={22} class="text-accent" />
+      <span>Fontlog</span>
+    </a>
+
+    <nav class="flex items-center gap-1 text-sm">
+      <a
+        href="/about"
+        class="text-muted hover:bg-surface hover:text-text rounded-md px-3 py-1.5 transition"
+        aria-current={path === '/about' ? 'page' : undefined}
+      >
+        About
+      </a>
+      <a
+        href={SITE.repo}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-muted hover:bg-surface hover:text-text grid h-8 w-8 place-items-center rounded-md transition"
+        aria-label="Source on GitHub"
+      >
+        <Icon icon={GithubIcon} size={18} />
+      </a>
+      <ThemeToggle />
+    </nav>
+  </div>
+</header>
