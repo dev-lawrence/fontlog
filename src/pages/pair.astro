@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PairPlayground from '../components/PairPlayground.tsx';
+import { getFonts } from '../lib/fonts';
+import { fontStack } from '../lib/stack';
+import { fontLinks, playgroundStylesheet } from '../lib/gfonts';
+
+const fonts = await getFonts();
+const stacks = fonts.map((f) => fontStack(f.id, f.data));
+
+const monoDefault = fonts.find((f) => f.data.classification === 'mono')?.id ?? fonts[0].id;
+const headingDefault = fonts[0].id;
+const bodyDefault =
+  fonts.find((f) => f.id !== headingDefault && f.data.classification !== 'mono')?.id ?? fonts[0].id;
+const defaults = { heading: headingDefault, body: bodyDefault, mono: monoDefault };
+
+const faces = stacks
+  .map((s) => s.fallbackFace)
+  .filter(Boolean)
+  .join('\n\n');
+
+const headExtra =
+  fontLinks(playgroundStylesheet(fonts.map((f) => f.data))) + `\n<style>\n${faces}\n</style>`;
+---
+
+<BaseLayout
+  title="Pairing playground"
+  description="Pick a heading, body and mono font from the catalogue, see them composed in a real layout, and copy a production font stack — installs, CSS variables, Tailwind config, and zero-CLS fallback faces."
+  headExtra={headExtra}
+>
+  <section class="mb-8 max-w-2xl">
+    <h1 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+      Pairing playground
+    </h1>
+    <p class="text-muted mt-3 text-lg text-pretty">
+      Put three fonts together, see them in a real layout, and copy a stack you can paste straight
+      into a project — Fontsource installs, CSS variables, a Tailwind block, and fallback
+      <code class="font-mono text-[0.9em]">@font-face</code> rules generated from each font&rsquo;s real
+      metrics so there&rsquo;s no layout shift.
+    </p>
+  </section>
+
+  <PairPlayground client:load stacks={stacks} defaults={defaults} />
+</BaseLayout>

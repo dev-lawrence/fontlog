@@ -1,8 +1,7 @@
 import { createRequire } from 'node:module';
 import { statSync } from 'node:fs';
 
-const require = createRequire(import.meta.url);
-const sharp = require('sharp');
+const sharp = createRequire(import.meta.url)('sharp');
 
 // argv: node scripts/shot.mjs <input.png> <output-name-without-ext>
 const [input, name] = process.argv.slice(2);

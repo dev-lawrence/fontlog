@@ -21,6 +21,13 @@ const isHome = path === '/';
 
     <nav class="flex items-center gap-1 text-sm">
       <a
+        href="/pair"
+        class="text-muted hover:bg-surface hover:text-text rounded-md px-3 py-1.5 transition"
+        aria-current={path === '/pair' ? 'page' : undefined}
+      >
+        Pair
+      </a>
+      <a
         href="/about"
         class="text-muted hover:bg-surface hover:text-text rounded-md px-3 py-1.5 transition"
         aria-current={path === '/about' ? 'page' : undefined}

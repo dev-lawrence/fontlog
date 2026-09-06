@@ -27,6 +27,18 @@ export function listStylesheet(fonts: FontData[]): string {
   return `${CSS2}?${families}&display=swap`;
 }
 
+/**
+ * One stylesheet covering every catalogue font at its full weight range — used
+ * by the pairing playground, where headings and body need different weights.
+ */
+export function playgroundStylesheet(fonts: FontData[]): string {
+  const families = fonts
+    .map((f) => f.googleFontsSpec ?? f.family.trim().replace(/\s+/g, '+'))
+    .map((spec) => `family=${spec}`)
+    .join('&');
+  return `${CSS2}?${families}&display=swap`;
+}
+
 /** `<link>` tags (preconnect + stylesheet) as a string for BaseLayout's headExtra. */
 export function fontLinks(href: string): string {
   return [

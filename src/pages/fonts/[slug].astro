@@ -61,7 +61,15 @@ const meta = [
 
   <!-- Preview -->
   <section class="mt-10">
-    <h2 class="text-muted mb-3 text-sm font-medium tracking-wide uppercase">Preview</h2>
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-muted text-sm font-medium tracking-wide uppercase">Preview</h2>
+      <a
+        href={`/pair?${d.classification === 'mono' ? 'm' : 'h'}=${font.id}`}
+        class="text-muted decoration-border hover:decoration-accent text-sm underline underline-offset-4"
+      >
+        Pair it with another font &rarr;
+      </a>
+    </div>
     <TypePreview
       client:visible
       family={d.family}

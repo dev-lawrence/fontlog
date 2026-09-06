@@ -39,6 +39,17 @@ pnpm format       # prettier
    the card shows a "screenshot pending" slot.
 5. `pairsWith` / `similarTo` can reference fonts that aren't in the catalogue yet — they render as
    plain text and become links automatically once that `<slug>.mdx` exists.
+6. For the pairing playground's zero-CLS fallbacks, add a line to `src/lib/capsize-metrics.ts`
+   mapping the new slug to its `@capsizecss/metrics/<camelCaseName>` import. If you skip this the
+   playground still works — it just omits the fallback `@font-face` for that font.
+
+## Pairing playground
+
+`/pair` lets you pick a heading / body / mono font, see them composed in a mock layout, and copy a
+full stack: Fontsource installs, CSS variables, a Tailwind `@theme` block, and fallback
+`@font-face` rules with `size-adjust` / `ascent-override` computed from real font metrics
+(`@capsizecss/core` + `@capsizecss/metrics`, build-time only). The selection is encoded in the URL
+(`/pair?h=…&b=…&m=…`) so a pairing is shareable.
 
 ## OG images
 
