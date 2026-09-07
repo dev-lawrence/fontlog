@@ -4,7 +4,6 @@ import FontFilters from '../components/FontFilters.astro';
 import { getFonts } from '../lib/fonts';
 import { listStylesheet, fontLinks } from '../lib/gfonts';
 import { CLASSIFICATIONS, MOODS, type Classification, type Mood } from '../data/moods';
-import { SITE } from '../consts';
 
 const fonts = await getFonts();
 
@@ -19,11 +18,12 @@ const headExtra = fontLinks(listStylesheet(fonts.map((f) => f.data)));
 <BaseLayout headExtra={headExtra}>
   <section class="mb-14 max-w-2xl">
     <h1 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-      Fonts I&rsquo;ve used, so you don&rsquo;t have to reach for the same one again.
+      The fonts I actually use, and how to install them.
     </h1>
     <p class="text-muted mt-4 text-lg text-pretty">
-      {SITE.tagline} Every entry is open-license, with a live preview, real sites using it, the license
-      in plain English, and the exact command to install it.
+      A small, opinionated catalogue for developers bored of their default font. Every entry is
+      open-source, with a live preview, real sites using it, the licence in plain English, and a
+      copy-paste install command.
     </p>
   </section>
 
