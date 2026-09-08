@@ -11,6 +11,7 @@ import bricolageGrotesque from '@capsizecss/metrics/bricolageGrotesque';
 import recursive from '@capsizecss/metrics/recursive';
 import inconsolata from '@capsizecss/metrics/inconsolata';
 import funnelSans from '@capsizecss/metrics/funnelSans';
+import crimsonText from '@capsizecss/metrics/crimsonText';
 
 import arial from '@capsizecss/metrics/arial';
 import timesNewRoman from '@capsizecss/metrics/timesNewRoman';
@@ -23,6 +24,7 @@ export const FONT_METRICS: Record<string, FontMetrics> = {
   recursive,
   inconsolata,
   'funnel-sans': funnelSans,
+  'crimson-text': crimsonText,
 };
 
 /** System face each classification falls back to (must be widely pre-installed). */
