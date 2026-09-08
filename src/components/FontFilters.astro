@@ -1,41 +1,68 @@
 ---
 import { CLASSIFICATION_LABELS, type Classification, type Mood } from '../data/moods';
+import { USE_CASE_LABELS, USE_CASE_DESCRIPTIONS, type UseCase } from '../data/use-cases';
 
 interface Props {
   classifications: Classification[];
   moods: Mood[];
+  useCases: UseCase[];
   total: number;
 }
 
-const { classifications, moods, total } = Astro.props;
+const { classifications, moods, useCases, total } = Astro.props;
 ---
 
-<div class="mb-10" data-filters>
-  <div class="flex flex-wrap items-center gap-1.5">
-    {
-      classifications.map((c) => (
-        <button
-          type="button"
-          class="chip"
-          data-filter="classification"
-          data-value={c}
-          aria-pressed="false"
-        >
-          {CLASSIFICATION_LABELS[c]}
-        </button>
-      ))
-    }
-    <span class="bg-border mx-1 h-4 w-px" aria-hidden="true"></span>
-    {
-      moods.map((m) => (
-        <button type="button" class="chip" data-filter="mood" data-value={m} aria-pressed="false">
-          {m}
-        </button>
-      ))
-    }
+<div class="mb-10 space-y-4" data-filters>
+  <div>
+    <p class="text-faint mb-2 text-xs font-medium tracking-wide uppercase">Style</p>
+    <div class="flex flex-wrap items-center gap-1.5">
+      {
+        classifications.map((c) => (
+          <button
+            type="button"
+            class="chip"
+            data-filter="classification"
+            data-value={c}
+            aria-pressed="false"
+          >
+            {CLASSIFICATION_LABELS[c]}
+          </button>
+        ))
+      }
+      <span class="bg-border mx-1 h-4 w-px" aria-hidden="true"></span>
+      {
+        moods.map((m) => (
+          <button type="button" class="chip" data-filter="mood" data-value={m} aria-pressed="false">
+            {m}
+          </button>
+        ))
+      }
+    </div>
   </div>
 
-  <div class="text-muted mt-3 flex items-center gap-3 text-sm">
+  {
+    useCases.length > 0 && (
+      <div>
+        <p class="text-faint mb-2 text-xs font-medium tracking-wide uppercase">Good for</p>
+        <div class="flex flex-wrap items-center gap-1.5">
+          {useCases.map((u) => (
+            <button
+              type="button"
+              class="chip"
+              data-filter="use"
+              data-value={u}
+              aria-pressed="false"
+              title={USE_CASE_DESCRIPTIONS[u]}
+            >
+              {USE_CASE_LABELS[u]}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  <div class="text-muted flex items-center gap-3 pt-1 text-sm">
     <span data-count>{total} typefaces</span>
     <button type="button" class="hover:text-text hidden underline underline-offset-4" data-clear>
       Clear filters
@@ -54,6 +81,9 @@ const { classifications, moods, total } = Astro.props;
       color 0.15s,
       border-color 0.15s,
       background-color 0.15s;
+  }
+  .chip[data-filter='mood'],
+  .chip[data-filter='classification'] {
     text-transform: capitalize;
   }
   .chip:hover {
@@ -67,6 +97,8 @@ const { classifications, moods, total } = Astro.props;
 </style>
 
 <script>
+  type Group = 'classification' | 'mood' | 'use';
+
   const root = document.querySelector<HTMLElement>('[data-filters]');
   if (root) {
     const chips = [...root.querySelectorAll<HTMLButtonElement>('.chip')];
@@ -74,45 +106,70 @@ const { classifications, moods, total } = Astro.props;
     const clearBtn = root.querySelector<HTMLButtonElement>('[data-clear]');
     const rows = [...document.querySelectorAll<HTMLElement>('[data-font]')];
 
-    const active = { classification: new Set<string>(), mood: new Set<string>() };
+    const active: Record<Group, Set<string>> = {
+      classification: new Set(),
+      mood: new Set(),
+      use: new Set(),
+    };
+
+    const listOf = (row: HTMLElement, key: string) =>
+      (row.dataset[key] ?? '').split(' ').filter(Boolean);
 
     function apply() {
       let shown = 0;
       for (const row of rows) {
-        const cls = row.dataset.classification ?? '';
-        const moods = (row.dataset.moods ?? '').split(' ').filter(Boolean);
-        const okCls = active.classification.size === 0 || active.classification.has(cls);
+        const okCls =
+          active.classification.size === 0 ||
+          active.classification.has(row.dataset.classification ?? '');
+        const moods = listOf(row, 'moods');
         const okMood = active.mood.size === 0 || [...active.mood].some((m) => moods.includes(m));
-        const visible = okCls && okMood;
+        const uses = listOf(row, 'uses');
+        const okUse = active.use.size === 0 || [...active.use].some((u) => uses.includes(u));
+
+        const visible = okCls && okMood && okUse;
         row.hidden = !visible;
         if (visible) shown++;
       }
+
+      const anyActive = active.classification.size + active.mood.size + active.use.size > 0;
       if (countEl) {
-        const filtered = active.classification.size + active.mood.size > 0;
-        countEl.textContent = filtered
+        countEl.textContent = anyActive
           ? `${shown} of ${rows.length} typefaces`
           : `${rows.length} typefaces`;
       }
-      clearBtn?.classList.toggle('hidden', active.classification.size + active.mood.size === 0);
+      clearBtn?.classList.toggle('hidden', !anyActive);
+    }
+
+    function toggle(chip: HTMLButtonElement, force?: boolean) {
+      const group = chip.dataset.filter as Group;
+      const value = chip.dataset.value!;
+      const set = active[group];
+      const on = force ?? !set.has(value);
+      if (on) set.add(value);
+      else set.delete(value);
+      chip.setAttribute('aria-pressed', String(on));
     }
 
     for (const chip of chips) {
       chip.addEventListener('click', () => {
-        const type = chip.dataset.filter as 'classification' | 'mood';
-        const value = chip.dataset.value!;
-        const set = active[type];
-        if (set.has(value)) set.delete(value);
-        else set.add(value);
-        chip.setAttribute('aria-pressed', String(set.has(value)));
+        toggle(chip);
         apply();
       });
     }
 
     clearBtn?.addEventListener('click', () => {
-      active.classification.clear();
-      active.mood.clear();
+      for (const set of Object.values(active)) set.clear();
       for (const chip of chips) chip.setAttribute('aria-pressed', 'false');
       apply();
+      history.replaceState(null, '', location.pathname);
     });
+
+    // Deep link: /?use=dev-tools arrives from a "Best for" tag on a font page.
+    const preset = new URLSearchParams(location.search).getAll('use');
+    for (const value of preset) {
+      const chip = chips.find((c) => c.dataset.filter === 'use' && c.dataset.value === value);
+      if (chip) toggle(chip, true);
+    }
+    apply();
   }
 </script>

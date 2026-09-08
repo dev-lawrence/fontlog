@@ -4,6 +4,7 @@ import FontFilters from '../components/FontFilters.astro';
 import { getFonts } from '../lib/fonts';
 import { listStylesheet, fontLinks } from '../lib/gfonts';
 import { CLASSIFICATIONS, MOODS, type Classification, type Mood } from '../data/moods';
+import { USE_CASES, USE_CASE_LABELS, type UseCase } from '../data/use-cases';
 
 const fonts = await getFonts();
 
@@ -11,6 +12,9 @@ const classifications = CLASSIFICATIONS.filter((c) =>
   fonts.some((f) => f.data.classification === c),
 ) as Classification[];
 const moods = MOODS.filter((m) => fonts.some((f) => f.data.moods.includes(m))) as Mood[];
+const useCases = USE_CASES.filter((u) =>
+  fonts.some((f) => f.data.bestFor.some((b) => b.use === u)),
+) as UseCase[];
 
 const headExtra = fontLinks(listStylesheet(fonts.map((f) => f.data)));
 ---
@@ -27,7 +31,12 @@ const headExtra = fontLinks(listStylesheet(fonts.map((f) => f.data)));
     </p>
   </section>
 
-  <FontFilters classifications={classifications} moods={moods} total={fonts.length} />
+  <FontFilters
+    classifications={classifications}
+    moods={moods}
+    useCases={useCases}
+    total={fonts.length}
+  />
 
   <ul class="border-border border-t">
     {
@@ -36,6 +45,7 @@ const headExtra = fontLinks(listStylesheet(fonts.map((f) => f.data)));
           data-font
           data-classification={font.data.classification}
           data-moods={font.data.moods.join(' ')}
+          data-uses={font.data.bestFor.map((b) => b.use).join(' ')}
         >
           <a
             href={`/fonts/${font.id}`}
@@ -58,6 +68,11 @@ const headExtra = fontLinks(listStylesheet(fonts.map((f) => f.data)));
                 <span class="border-border rounded border px-1.5 py-0.5">{m}</span>
               ))}
             </span>
+            {font.data.bestFor.length > 0 && (
+              <span class="text-faint mt-2 block text-xs">
+                Good for {font.data.bestFor.map((b) => USE_CASE_LABELS[b.use]).join(' · ')}
+              </span>
+            )}
           </a>
         </li>
       ))

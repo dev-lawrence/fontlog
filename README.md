@@ -39,9 +39,29 @@ pnpm format       # prettier
    the card shows a "screenshot pending" slot.
 5. `pairsWith` / `similarTo` can reference fonts that aren't in the catalogue yet — they render as
    plain text and become links automatically once that `<slug>.mdx` exists.
-6. For the pairing playground's zero-CLS fallbacks, add a line to `src/lib/capsize-metrics.ts`
+6. Optional: add `bestFor` entries — see below. Each one needs a `why`.
+7. For the pairing playground's zero-CLS fallbacks, add a line to `src/lib/capsize-metrics.ts`
    mapping the new slug to its `@capsizecss/metrics/<camelCaseName>` import. If you skip this the
    playground still works — it just omits the fallback `@font-face` for that font.
+
+## "Best for" tags
+
+Each font can declare what it's good for, tagged by _context of use_ rather than industry:
+
+```yaml
+bestFor:
+  - use: dev-tools
+    why: >-
+      A sentence saying why. This is required — an unjustified tag is worse than no tag.
+```
+
+The vocabulary is a closed list in `src/data/use-cases.ts` (`product-ui`, `marketing`,
+`dev-tools`, `docs`, `code`, `blog`, `portfolio`). Keep it to two or three per font; a face that's
+"good for everything" tells the reader nothing. Tags render as a **Best for** section on the font
+page and as a third filter group on the index; each one deep-links to `/?use=<tag>`.
+
+This is a separate axis from `moods`: moods are how a typeface _feels_, `bestFor` is the _job_ it
+does.
 
 ## Pairing playground
 

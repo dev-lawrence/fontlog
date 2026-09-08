@@ -2,6 +2,7 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 import { MOODS, CLASSIFICATIONS } from './data/moods';
+import { USE_CASES } from './data/use-cases';
 
 const seenOn = z.object({
   /** Name of the site or product using the font. */
@@ -64,6 +65,19 @@ const fonts = defineCollection({
       featuredWeight: z.number().int().default(400),
       /** Manual sort position on the index (ascending). Unset entries fall to the end, then sort by name. */
       order: z.number().int().default(999),
+
+      /**
+       * What this font is good for, and why. Each entry needs a reason — an
+       * untagged claim is worth less than no claim. Two or three is plenty.
+       */
+      bestFor: z
+        .array(
+          z.object({
+            use: z.enum(USE_CASES),
+            why: z.string().max(200),
+          }),
+        )
+        .default([]),
 
       seenOn: z.array(seenOn).default([]),
 

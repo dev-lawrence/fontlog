@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getFonts } from '../lib/fonts';
 import { MOODS } from '../data/moods';
+import { USE_CASE_LABELS, USE_CASES } from '../data/use-cases';
 
 const count = (await getFonts()).length;
 ---
@@ -43,6 +44,10 @@ const count = (await getFonts()).length;
         self-host template.
       </li>
       <li>Real sites using the font, when I've found good ones.</li>
+      <li>
+        A &ldquo;best for&rdquo; list &mdash; the kinds of site the font suits, with a reason for
+        each.
+      </li>
       <li>A few &ldquo;if you like this, try&rdquo; pointers.</li>
     </ul>
 
@@ -52,6 +57,14 @@ const count = (await getFonts()).length;
       {MOODS.slice(0, -1).join(', ')}, or {MOODS.at(-1)}. They're deliberately vague, because
       &ldquo;I want something warmer&rdquo; is usually how the search actually starts. Use the
       filters on the home page to narrow things down.
+    </p>
+
+    <p>
+      Separately, most fonts carry a <strong>&ldquo;best for&rdquo;</strong> list &mdash;
+      {USE_CASES.map((u) => USE_CASE_LABELS[u]).join(', ')} &mdash; describing the job the typeface does
+      rather than how it feels. Every one of those tags has to come with a reason on the font's page;
+      a claim I can't justify in a sentence doesn't get made. They're judgement calls, not rules: plenty
+      of good typefaces work far outside the boxes I've put them in.
     </p>
 
     <h2>Everything is open</h2>
