@@ -100,7 +100,43 @@ export function installSnippets(font: FontData): Snippet[] {
     note: `Files: ${font.sourceUrl}`,
   });
 
+  out.push({
+    id: 'ai-prompt',
+    label: 'AI / agent prompt',
+    lang: 'prompt',
+    code: aiPrompt(font, fallback),
+    note: 'Paste into Claude Code, Codex, T3 Code, Cursor or similar — it has what an agent needs to wire the font up itself.',
+  });
+
   return out;
+}
+
+/** A self-contained brief an LLM coding agent can act on without touching this site again. */
+function aiPrompt(font: FontData, fallback: string): string {
+  const lines = [
+    `Add the "${font.name}" font to this project.`,
+    '',
+    `- CSS family name once loaded: '${font.fontsourceFamily ?? font.family}'`,
+    `- Fallback stack: ${fallback}`,
+    font.variable
+      ? `- Variable font. Axes: ${font.axes.join(', ') || 'none listed'}`
+      : `- Static weights: ${font.weights.join(', ')}`,
+  ];
+
+  if (font.fontsource) lines.push(`- Fontsource package (self-hosted, npm): ${font.fontsource}`);
+  if (font.nextFont) lines.push(`- next/font/google export name: ${font.nextFont}`);
+  if (font.googleFontsSpec) lines.push(`- Google Fonts CDN family param: ${font.googleFontsSpec}`);
+
+  lines.push(
+    `- License: ${font.license} — ${font.licenseSummary}`,
+    `- Source: ${font.sourceUrl}`,
+    '',
+    'Detect how this project already loads fonts (Fontsource import, next/font, Tailwind @theme, ' +
+      'plain @font-face) and follow that pattern. Prefer self-hosting over the Google Fonts CDN ' +
+      'link for production.',
+  );
+
+  return lines.join('\n');
 }
 
 function camel(pascalSnake: string): string {
