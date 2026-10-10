@@ -13,6 +13,8 @@ import inconsolata from '@capsizecss/metrics/inconsolata';
 import funnelSans from '@capsizecss/metrics/funnelSans';
 import crimsonText from '@capsizecss/metrics/crimsonText';
 import schibstedGrotesk from '@capsizecss/metrics/schibstedGrotesk';
+import inter from '@capsizecss/metrics/inter';
+import geist from '@capsizecss/metrics/geist';
 
 import arial from '@capsizecss/metrics/arial';
 import timesNewRoman from '@capsizecss/metrics/timesNewRoman';
@@ -27,6 +29,8 @@ export const FONT_METRICS: Record<string, FontMetrics> = {
   'funnel-sans': funnelSans,
   'crimson-text': crimsonText,
   'schibsted-grotesk': schibstedGrotesk,
+  inter,
+  geist,
 };
 
 /** System face each classification falls back to (must be widely pre-installed). */
