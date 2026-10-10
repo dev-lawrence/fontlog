@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "add-inter-geist",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "add-inter-geist": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "add-inter-geist",
+    "origin"
+  ]
+}
