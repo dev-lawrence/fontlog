@@ -5,8 +5,8 @@
   "private": true,
   "description": "A curated log of open-license typefaces for developers tired of using the same font.",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "node api.js && astro dev",
+    "build": "node api.js && astro build",
     "preview": "astro preview",
     "check": "astro check",
     "format": "prettier --write \"**/*.{astro,ts,tsx,js,mjs,json,md,mdx,css}\"",
