@@ -15,6 +15,7 @@ import crimsonText from '@capsizecss/metrics/crimsonText';
 import schibstedGrotesk from '@capsizecss/metrics/schibstedGrotesk';
 import inter from '@capsizecss/metrics/inter';
 import geist from '@capsizecss/metrics/geist';
+import dmSans from '@capsizecss/metrics/dMSans';
 
 import arial from '@capsizecss/metrics/arial';
 import timesNewRoman from '@capsizecss/metrics/timesNewRoman';
@@ -31,6 +32,7 @@ export const FONT_METRICS: Record<string, FontMetrics> = {
   'schibsted-grotesk': schibstedGrotesk,
   inter,
   geist,
+  'dm-sans': dmSans,
 };
 
 /** System face each classification falls back to (must be widely pre-installed). */
