@@ -1,0 +1,85 @@
+---
+import { SITE } from '../consts';
+
+const year = new Date().getFullYear();
+const links = [
+  { href: '/', label: 'Catalogue' },
+  { href: '/pair', label: 'Pair fonts' },
+  { href: '/about', label: 'About' },
+];
+---
+
+<footer class="mt-16 overflow-hidden">
+  <div class="container-page">
+    <div class="border-divider grid gap-10 border-t py-12 sm:grid-cols-[1fr_auto] sm:gap-16">
+      <div>
+        <p class="text-ink text-lg font-semibold">A personal catalogue of fonts worth using.</p>
+        <p class="text-ink-2 mt-2 max-w-sm" data-js-only data-footer-set>
+          This page is set in Fontlog’s own fonts.
+          <button type="button" class="text-accent font-semibold hover:underline" data-footer-change>
+            Change it ↑
+          </button>
+        </p>
+      </div>
+
+      <nav aria-label="Footer" class="grid grid-cols-2 gap-x-12 gap-y-1 sm:grid-cols-1">
+        {
+          links.map((l) => (
+            <a href={l.href} class="text-ink hover:text-accent flex min-h-11 items-center text-[15px] font-medium">
+              {l.label}
+            </a>
+          ))
+        }
+        <a
+          href={SITE.repo}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-ink hover:text-accent flex min-h-11 items-center text-[15px] font-medium"
+        >
+          GitHub<span class="sr-only"> (opens in a new tab)</span>
+        </a>
+      </nav>
+    </div>
+
+    <p
+      class="font-heading text-accent-soft pointer-events-none mb-6 text-center text-[clamp(5rem,23vw,20rem)] leading-[1.15] font-bold tracking-[-0.04em] select-none sm:mb-8"
+      aria-hidden="true"
+    >
+      Fontlog
+    </p>
+  </div>
+
+  <div class="bg-surface border-divider relative border-t">
+    <div class="container-page text-ink-2 flex flex-col gap-1 py-5 text-sm sm:flex-row sm:justify-between">
+      <p>
+        &copy; {year}
+        <a href={SITE.authorUrl} class="hover:text-ink underline underline-offset-4">{SITE.author}</a
+        >. Font licenses belong to their respective authors.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  import { manifest, getState, subscribe } from '../scripts/site-font';
+
+  const line = document.querySelector<HTMLElement>('[data-footer-set]');
+  const btn = document.querySelector<HTMLButtonElement>('[data-footer-change]');
+  btn?.addEventListener('click', (e) => {
+    e.stopPropagation(); // the picker closes on outside clicks
+    const toggle = document.querySelector<HTMLButtonElement>('[data-picker-toggle]');
+    window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    if (toggle?.getAttribute('aria-expanded') !== 'true') toggle?.click();
+    toggle?.focus({ preventScroll: true });
+  });
+  const render = () => {
+    if (!line || !btn) return;
+    const s = getState();
+    const f = s.font ? manifest[s.font] : null;
+    line.firstChild!.textContent = f
+      ? `This page is set in ${f.name}. `
+      : 'This page is set in Fontlog’s own fonts. ';
+  };
+  render();
+  subscribe(render);
+</script>

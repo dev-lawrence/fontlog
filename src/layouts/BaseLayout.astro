@@ -1,7 +1,15 @@
 ---
 import '../styles/global.css';
+import '@fontsource-variable/funnel-sans/wght.css';
+import '@fontsource-variable/bricolage-grotesque/opsz.css';
+import '@fontsource-variable/inconsolata/wght.css';
 import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteFontPill from '../components/SiteFontPill.astro';
 import { SITE } from '../consts';
+import { getFonts } from '../lib/fonts';
+import { siteFontManifest } from '../lib/site-fonts';
+import { listStylesheet, fontLinks } from '../lib/gfonts';
 
 interface Props {
   title?: string;
@@ -14,10 +22,15 @@ interface Props {
 
 const { title, description = SITE.description, ogImage = '/og/_site.png', headExtra } = Astro.props;
 
-const pageTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.tagline}`;
 const canonical = new URL(Astro.url.pathname, SITE.url).href;
 const ogImageUrl = new URL(ogImage, SITE.url).href;
-const year = new Date().getFullYear();
+
+// Every page can switch the site font and lists font names in their own face,
+// so the featured-weight specimen sheet is site-wide (one request, lazy files).
+const fonts = await getFonts();
+const manifest = siteFontManifest(fonts);
+const specimenLinks = fontLinks(listStylesheet(fonts.map((f) => f.data)));
 ---
 
 <!doctype html>
@@ -43,38 +56,60 @@ const year = new Date().getFullYear();
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageUrl} />
 
-    <script is:inline>
+    <script is:inline define:vars={{ manifest }}>
       (() => {
+        const root = document.documentElement;
+        root.classList.add('js');
+        // Light is the default; dark only when the visitor picked it.
         try {
-          const stored = localStorage.getItem('theme');
-          const dark = stored
-            ? stored === 'dark'
-            : window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.classList.toggle('dark', dark);
+          root.classList.toggle('dark', localStorage.getItem('theme') === 'dark');
         } catch {}
+
+        // Site font: a shared link wins over the saved choice.
+        let pick = null;
+        try {
+          const p = new URLSearchParams(location.search);
+          const f = p.get('siteFont');
+          if (f && manifest[f]) pick = { font: f, scope: p.get('siteScope') };
+          else pick = JSON.parse(localStorage.getItem('fontlog.siteType.v1') || 'null');
+        } catch {}
+        const f = pick && manifest[pick.font];
+        if (!f) return;
+        const scope = ['headings', 'body', 'all'].includes(pick.scope) ? pick.scope : 'all';
+        window.__fontlogSiteFont = { font: pick.font, scope };
+        const css = '"' + f.family + '", ' + f.generic;
+        if (scope !== 'body') root.style.setProperty('--site-heading', css);
+        if (scope !== 'headings') root.style.setProperty('--site-body', css);
+        root.dataset.siteFont = pick.font;
+        root.dataset.siteScope = scope;
+        const link = document.createElement('link');
+        link.id = 'sf-' + pick.font;
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=' + f.spec + '&display=swap';
+        link.onerror = () => link.remove(); // site-font.ts retries with a fresh link
+        document.head.append(link);
       })();
     </script>
+    <script type="application/json" id="site-font-manifest" set:html={JSON.stringify(manifest)} />
 
+    <Fragment set:html={specimenLinks} />
     {headExtra && <Fragment set:html={headExtra} />}
   </head>
 
   <body class="flex min-h-dvh flex-col">
+    <a
+      href="#main"
+      class="bg-accent text-accent-ink fixed top-3 left-3 z-50 -translate-y-24 rounded-lg px-4 py-3 text-sm font-semibold focus:translate-y-0"
+    >
+      Skip to content
+    </a>
     <SiteHeader />
 
-    <main class="container-page flex-1 py-10 sm:py-14">
+    <main id="main" tabindex="-1" class="container-page flex-1 pt-8 pb-16 outline-none sm:pt-12 sm:pb-24">
       <slot />
     </main>
 
-    <footer class="border-border border-t">
-      <div
-        class="container-page text-muted flex flex-col gap-1 py-8 text-sm sm:flex-row sm:items-center sm:justify-between"
-      >
-        <p>
-          Fontlog — a personal log by {SITE.author}. Every font is open-license; the notes are
-          opinions.
-        </p>
-        <p>&copy; {year}</p>
-      </div>
-    </footer>
+    <SiteFooter />
+    <SiteFontPill />
   </body>
 </html>

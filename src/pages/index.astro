@@ -1,10 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FontCard from '../components/FontCard.astro';
 import FontFilters from '../components/FontFilters.astro';
 import { getFonts } from '../lib/fonts';
-import { listStylesheet, fontLinks } from '../lib/gfonts';
 import { CLASSIFICATIONS, MOODS, type Classification, type Mood } from '../data/moods';
-import { USE_CASES, USE_CASE_LABELS, type UseCase } from '../data/use-cases';
+import { USE_CASES, type UseCase } from '../data/use-cases';
 
 const fonts = await getFonts();
 
@@ -16,81 +16,645 @@ const useCases = USE_CASES.filter((u) =>
   fonts.some((f) => f.data.bestFor.some((b) => b.use === u)),
 ) as UseCase[];
 
-const headExtra = fontLinks(listStylesheet(fonts.map((f) => f.data)));
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const countWord = WORDS[fonts.length] ?? String(fonts.length);
+const CountWord = countWord.charAt(0).toUpperCase() + countWord.slice(1);
+
+// Quick picks in the hero: chosen to show range (UI sans, serif, quirky, mono).
+const QUICK = ['geist', 'crimson-text', 'recursive', 'inconsolata'];
+const quick = QUICK.map((slug) => fonts.find((f) => f.id === slug)).filter(Boolean) as typeof fonts;
+
+const face = (f: (typeof fonts)[number], weight = f.data.featuredWeight) =>
+  `font-family:"${f.data.family}", ui-sans-serif, system-ui, sans-serif; font-weight:${weight}`;
+
+const pairH = fonts.find((f) => f.id === 'bricolage-grotesque') ?? fonts[0];
+const pairB = fonts.find((f) => f.id === 'crimson-text') ?? fonts[1] ?? fonts[0];
+
+const faqs = [
+  {
+    q: 'Can I use these in a commercial project?',
+    a: 'Every font here is published under an open license (all of them are currently OFL-1.1). That generally covers commercial use, bundling, and modifying them. Each font page links its license; give the one you pick a quick read.',
+  },
+  {
+    q: 'Why did the whole site just change font?',
+    a: 'That’s the font switcher. Pick a font and Fontlog sets its headings, body text, or everything in it, so you can see how it holds up on a real site. Reset puts it back. Specimens keep their own faces, and code stays monospace.',
+  },
+  {
+    q: 'How do I add one to my project?',
+    a: 'Open a font’s notes. The install section has copy-paste setup for Fontsource, Next.js, Google Fonts, self-hosting, and Tailwind v4. Or use the Install button in the pill at the bottom while you’re wearing a font.',
+  },
+];
 ---
 
-<BaseLayout headExtra={headExtra}>
-  <section class="mb-14 max-w-2xl">
-    <h1 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-      The fonts I actually use, and how to install them.
-    </h1>
-    <p class="text-muted mt-4 text-lg text-pretty">
-      A small, opinionated catalogue for developers bored of their default font. Every entry is
-      open-source, with a live preview, real sites using it, the licence in plain English, and a
-      copy-paste install command.
-    </p>
+<BaseLayout>
+  <!-- ─────────────────────────────── Hero ─────────────────────────────── -->
+  <section class="grid gap-10 pt-2 pb-10 lg:grid-cols-12 lg:items-stretch lg:gap-10 lg:pt-6 lg:pb-14">
+    <div class="flex flex-col justify-center lg:col-span-6 lg:py-6">
+      <h1 class="text-[clamp(2.9rem,6.4vw,5.25rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance">
+        Try a font.<br />
+        <span class="text-accent">On this very site.</span>
+      </h1>
+
+      <p class="lede mt-6 max-w-lg text-pretty">
+        A short list of fonts I’d actually use in a project. Wear one across this whole page, read my
+        notes, then copy the setup when it feels right.
+      </p>
+
+      <div class="mt-8" data-hero-picker data-js-only>
+        <p class="text-ink text-sm font-semibold" id="hero-pick-label">Set this page in…</p>
+        <div class="mt-3 flex flex-wrap gap-2" role="group" aria-labelledby="hero-pick-label">
+          {
+            quick.map((f) => (
+              <button
+                type="button"
+                data-hero-wear={f.id}
+                aria-pressed="false"
+                class="border-divider bg-surface text-ink hover:border-accent aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-ink min-h-11 rounded-full border px-4 text-[17px] leading-none transition-[background-color,border-color,color,translate] duration-150 hover:-translate-y-0.5"
+                style={face(f, Math.min(Math.max(f.data.featuredWeight, 500), 600))}
+              >
+                {f.data.name}
+              </button>
+            ))
+          }
+          <button
+            type="button"
+            data-hero-surprise
+            class="text-accent hover:bg-accent-wash min-h-11 rounded-full px-4 text-[15px] font-semibold transition-colors duration-150"
+          >
+            Surprise me
+          </button>
+        </div>
+        <p class="meta mt-4" data-hero-status aria-live="polite">
+          Right now: Fontlog’s own fonts.
+        </p>
+      </div>
+
+      <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+        <a href="#catalogue" class="btn btn-primary rounded-full px-5">Browse the {countWord} fonts</a>
+        <a href="/pair" class="text-ink hover:text-accent inline-flex min-h-11 items-center gap-1 font-semibold">
+          Or try a pairing <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Live glyph card: shows whatever font the site is wearing. -->
+    <div class="lg:col-span-6">
+      <figure
+        class="glyph-card bg-accent relative isolate flex h-full min-h-[25rem] flex-col overflow-hidden rounded-[2rem] p-5 text-white sm:min-h-[30rem] sm:p-7"
+        data-glyph-card
+      >
+        <div class="flex items-start justify-between gap-4 font-mono text-[13px]">
+          <div>
+            <p class="text-white/90">Now showing</p>
+            <p class="text-base font-semibold text-white" data-glyph-name>Bricolage Grotesque</p>
+          </div>
+          <p class="rounded-full bg-white/12 px-3 py-1 tabular-nums" data-glyph-readout>wght 600</p>
+        </div>
+
+        <div class="relative flex flex-1 items-center justify-center" aria-hidden="true">
+          <div class="relative" data-glyph-wrap>
+            {
+              ['ascender', 'cap height', 'x-height', 'baseline', 'descender'].map((g) => (
+                <span class="glyph-guide" data-guide={g}>
+                  <span class="glyph-guide-label">{g}</span>
+                </span>
+              ))
+            }
+            <span
+              class="relative block text-[clamp(8.5rem,19vw,15rem)] whitespace-nowrap"
+              style="font-family: var(--default-heading); font-weight: 600; line-height: 1"
+              data-glyph>Ag</span
+            >
+          </div>
+        </div>
+
+        <figcaption class="flex flex-wrap items-end justify-between gap-4">
+          <p class="max-w-[16rem] text-sm text-white/90" data-glyph-caption>
+            Fontlog’s heading font. Move your pointer across the card to change the weight.
+          </p>
+          <label class="flex items-center gap-3 font-mono text-[13px]" data-js-only>
+            <span>Weight</span>
+            <input type="range" class="glyph-range w-36" min="200" max="800" step="10" value="600" data-glyph-range />
+          </label>
+        </figcaption>
+      </figure>
+    </div>
   </section>
 
-  <FontFilters
-    classifications={classifications}
-    moods={moods}
-    useCases={useCases}
-    total={fonts.length}
-  />
-
-  <ul class="border-border border-t">
-    {
-      fonts.map((font) => (
-        <li
-          data-font
-          data-classification={font.data.classification}
-          data-moods={font.data.moods.join(' ')}
-          data-uses={font.data.bestFor.map((b) => b.use).join(' ')}
-        >
-          <a
-            href={`/fonts/${font.id}`}
-            class="group border-border block border-b py-7 transition-colors sm:py-9"
-          >
-            <span
-              class="text-text block text-[13vw] leading-none sm:text-6xl"
-              style={`font-family:"${font.data.family}"; font-weight:${font.data.featuredWeight}`}
-            >
-              {font.data.name}
-            </span>
-            <span class="text-muted mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span class="text-[15px] text-pretty">{font.data.blurb}</span>
-            </span>
-            <span class="text-faint mt-3 flex flex-wrap gap-1.5 text-xs">
-              <span class="border-border rounded border px-1.5 py-0.5 capitalize">
-                {font.data.classification}
-              </span>
-              {font.data.moods.map((m) => (
-                <span class="border-border rounded border px-1.5 py-0.5">{m}</span>
+  <!-- ──────────────────────── Name strip (marquee) ─────────────────────── -->
+  <section aria-label="Every font in the log" class="relative -mx-5 sm:-mx-8 lg:-mx-12" data-marquee>
+    <div class="hidden justify-end px-5 pt-3 sm:px-8 lg:px-12 [html.js_&]:flex" data-marquee-controls>
+      <button
+        type="button"
+        class="border-divider bg-surface text-ink-2 hover:text-ink rounded-full border px-3.5 py-1.5 text-sm font-semibold shadow-sm"
+        data-marquee-pause
+        aria-controls="marquee-track"
+      >
+        Pause
+      </button>
+    </div>
+    <div class="marquee-mask overflow-hidden py-3">
+      <div id="marquee-track" class="marquee-track flex w-max gap-3" data-marquee-track>
+        {
+          [0, 1].map((copy) => (
+            <ul class="flex gap-3" aria-hidden={copy === 1 ? 'true' : undefined} role="list">
+              {fonts.map((f) => (
+                <li>
+                  <button
+                    type="button"
+                    data-hero-wear={f.id}
+                    aria-pressed="false"
+                    tabindex={copy === 1 ? -1 : undefined}
+                    class="border-divider bg-surface text-ink hover:border-accent aria-pressed:bg-accent aria-pressed:text-accent-ink aria-pressed:border-accent flex min-h-14 items-center gap-3 rounded-2xl border px-5 text-2xl whitespace-nowrap transition-colors duration-150"
+                    style={face(f)}
+                  >
+                    {f.data.name}
+                    <span class="font-mono text-xs font-normal opacity-60" style="font-family: var(--font-mono)">
+                      {f.data.classification}
+                    </span>
+                  </button>
+                </li>
               ))}
-            </span>
-            {font.data.bestFor.length > 0 && (
-              <span class="text-faint mt-2 block text-xs">
-                Good for {font.data.bestFor.map((b) => USE_CASE_LABELS[b.use]).join(' · ')}
-              </span>
-            )}
-          </a>
-        </li>
-      ))
-    }
-  </ul>
+            </ul>
+          ))
+        }
+      </div>
+    </div>
+  </section>
 
-  <p class="text-muted hidden py-16 text-center" data-empty>Nothing matches those filters yet.</p>
+  <!-- ───────────────────────────── Catalogue ──────────────────────────── -->
+  <section id="catalogue" class="scroll-mt-24 pt-16 sm:pt-24">
+    <div class="mb-8 max-w-2xl">
+      <h2 class="text-[clamp(2rem,4vw,3rem)] leading-[1.05] tracking-[-0.025em] text-balance">
+        {CountWord} fonts. A few good reasons for each.
+      </h2>
+    </div>
+
+    <FontFilters
+      classifications={classifications}
+      moods={moods}
+      useCases={useCases}
+      total={fonts.length}
+    />
+
+    <div
+      class="border-divider bg-surface mt-6 flex flex-col gap-3 rounded-2xl border p-2 sm:flex-row sm:items-center"
+      data-js-only
+      data-sample-bar
+    >
+      <label for="sample-input" class="sr-only">Preview text for every card</label>
+      <input
+        id="sample-input"
+        type="text"
+        maxlength="80"
+        placeholder="Type something. Every card will use it."
+        autocomplete="off"
+        class="text-ink placeholder:text-ink-2 min-h-11 flex-1 rounded-xl bg-transparent px-3 text-base outline-none focus-visible:outline-2 focus-visible:outline-offset-0"
+        data-sample-input
+      />
+      <div role="radiogroup" aria-label="Preview size" class="bg-raised grid grid-cols-2 gap-1 rounded-xl p-1 sm:w-56">
+        <button type="button" role="radio" aria-checked="true" data-lens="display" class="text-ink-2 aria-checked:bg-surface aria-checked:text-ink min-h-9 rounded-lg text-sm font-medium aria-checked:shadow-sm">Display</button>
+        <button type="button" role="radio" aria-checked="false" data-lens="read" tabindex="-1" class="text-ink-2 aria-checked:bg-surface aria-checked:text-ink min-h-9 rounded-lg text-sm font-medium aria-checked:shadow-sm">Reading</button>
+      </div>
+    </div>
+
+    <ul class="group/list mt-6 grid gap-5 md:grid-cols-2 md:gap-6" data-catalogue-list data-lens="display">
+      {fonts.map((font) => <FontCard font={font} filterable />)}
+    </ul>
+
+    <div class="panel mt-8 px-6 py-12 text-center" data-empty hidden role="status">
+      <h3 class="text-2xl">No fonts match these filters.</h3>
+      <p class="text-ink-2 mx-auto mt-3 max-w-md text-pretty" data-empty-detail></p>
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <button type="button" class="btn btn-primary" data-clear-all>Clear all</button>
+        <a href="/#catalogue" class="btn btn-quiet">Browse all fonts</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── Pairing teaser ───────────────────────── -->
+  <section class="pt-20 sm:pt-28" data-pair-teaser>
+    <div class="bg-raised grid gap-8 overflow-hidden rounded-[2rem] p-5 sm:p-8 lg:grid-cols-12 lg:gap-10 lg:p-12">
+      <div class="flex min-w-0 flex-col pb-4 sm:pb-6 lg:col-span-5">
+        <h2 class="text-[clamp(2rem,4vw,3rem)] leading-[1.05] tracking-[-0.025em] text-balance">
+          Two fonts, same page.
+        </h2>
+        <p class="lede mt-4 max-w-md text-pretty">
+          One for headings, one for reading. Swap them here, then keep going in the playground for
+          code fonts, scale, and a copy-paste stack.
+        </p>
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-1" data-js-only>
+          <label class="block">
+            <span class="text-ink mb-1.5 block text-sm font-medium">Heading</span>
+            <span class="relative block">
+              <select class="field pair-select" data-pair-h>
+                {fonts.map((f) => <option value={f.id} selected={f.id === pairH.id}>{f.data.name}</option>)}
+              </select>
+              <svg class="text-ink-2 pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+          </label>
+          <label class="block">
+            <span class="text-ink mb-1.5 block text-sm font-medium">Body</span>
+            <span class="relative block">
+              <select class="field pair-select" data-pair-b>
+                {fonts.map((f) => <option value={f.id} selected={f.id === pairB.id}>{f.data.name}</option>)}
+              </select>
+              <svg class="text-ink-2 pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+          </label>
+        </div>
+        <a
+          href={`/pair?h=${pairH.id}&b=${pairB.id}`}
+          class="btn btn-primary mt-6 w-fit max-w-full rounded-full px-5 text-center"
+          data-pair-link
+        >
+          Open in the playground <span aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <article class="bg-surface border-divider rounded-2xl border p-6 shadow-[var(--shadow-card)] sm:p-10 lg:col-span-7" aria-label="Pairing preview">
+        <p
+          class="text-ink text-[clamp(2rem,4.2vw,3.25rem)] leading-[1.05] text-balance"
+          style={face(pairH)}
+          data-pair-heading
+          data-families={JSON.stringify(Object.fromEntries(fonts.map((f) => [f.id, [f.data.family, f.data.featuredWeight]])))}
+        >
+          Notes from a small studio
+        </p>
+        <p class="text-ink-2 mt-5 text-lg leading-[1.65] text-pretty" style={face(pairB, 400)} data-pair-body>
+          We keep a paper notebook beside the keyboard. Most pages hold a sketch, a few numbers, and a
+          half-finished sentence. The ones worth keeping get typed up, tidied, and shared. Good type
+          makes that last step feel like the easy part.
+        </p>
+        <p class="meta mt-6 font-mono" data-pair-caption>{pairH.data.name} + {pairB.data.name}</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── Curation + FAQ ───────────────────────── -->
+  <section class="grid gap-10 pt-20 sm:pt-28 lg:grid-cols-12 lg:gap-12">
+    <div class="lg:col-span-5">
+      <h2 class="text-[clamp(2rem,4vw,3rem)] leading-[1.05] tracking-[-0.025em] text-balance">
+        A short list, kept by hand.
+      </h2>
+      <p class="lede mt-4 max-w-md text-pretty">
+        I keep this collection small so I can write useful notes about each font: what it’s good at,
+        where it struggles, and how to install it.
+      </p>
+      <a href="/about" class="text-accent mt-5 inline-flex min-h-11 items-center gap-1 font-semibold hover:underline">
+        More about Fontlog <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="divide-divider border-divider divide-y border-y lg:col-span-7">
+      {
+        faqs.map((f) => (
+          <details class="group/faq py-1">
+            <summary class="text-ink flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 text-lg font-medium [&::-webkit-details-marker]:hidden">
+              {f.q}
+              <span class="bg-raised text-ink grid size-8 shrink-0 place-items-center rounded-full transition-transform duration-200 group-open/faq:rotate-45" aria-hidden="true">
+                +
+              </span>
+            </summary>
+            <p class="text-ink-2 max-w-prose pb-5 text-pretty">{f.a}</p>
+          </details>
+        ))
+      }
+    </div>
+  </section>
 </BaseLayout>
 
+<style>
+  .pair-select {
+    appearance: none;
+    min-height: 3rem;
+    padding-inline: 1rem 2.75rem;
+    border-color: var(--divider);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: border-color 140ms var(--ease-ui);
+  }
+  .pair-select:hover,
+  .pair-select:focus-visible {
+    border-color: var(--accent);
+  }
+
+  /* Glyph card: faint design-tool grid behind the letters. */
+  .glyph-card {
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+  }
+  :global(.dark) .glyph-card {
+    background-color: #3451e8;
+  }
+  .glyph-guide {
+    position: absolute;
+    left: -3.5rem;
+    right: -3.5rem;
+    height: 0;
+    border-top: 1px dashed rgb(255 255 255 / 0.45);
+    opacity: 0;
+    transition:
+      top 180ms var(--ease-ui),
+      opacity 180ms var(--ease-ui);
+  }
+  .glyph-guide[data-guide='baseline'] {
+    border-top-style: solid;
+    border-top-color: rgb(255 255 255 / 0.8);
+  }
+  .glyph-guide[data-ready] {
+    opacity: 1;
+  }
+  .glyph-guide-label {
+    position: absolute;
+    right: 0;
+    bottom: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1;
+    color: rgb(255 255 255 / 0.92);
+    letter-spacing: 0.02em;
+  }
+  .glyph-guide[data-left] .glyph-guide-label {
+    right: auto;
+    left: 0;
+  }
+  .glyph-range {
+    accent-color: #fff;
+  }
+
+  /* Name strip */
+  .marquee-mask {
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+  :global(html.js) .marquee-track {
+    animation: marquee 48s linear infinite;
+  }
+  [data-marquee]:hover .marquee-track,
+  [data-marquee]:focus-within .marquee-track,
+  [data-marquee][data-paused] .marquee-track {
+    animation-play-state: paused;
+  }
+  @keyframes marquee {
+    to {
+      transform: translateX(calc(-50% - 0.375rem));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(html.js) .marquee-track {
+      animation: none;
+    }
+    .marquee-mask {
+      overflow-x: auto;
+    }
+    [data-marquee-controls] {
+      display: none !important;
+    }
+  }
+
+  /* Font-change cross-fade (View Transitions) */
+  :global(::view-transition-old(root)),
+  :global(::view-transition-new(root)) {
+    animation-duration: 260ms;
+  }
+</style>
+
 <script>
-  // Show the empty-state line when every row is hidden.
-  const list = document.querySelector('ul');
-  const empty = document.querySelector<HTMLElement>('[data-empty]');
-  const rows = [...document.querySelectorAll<HTMLElement>('[data-font]')];
-  const observer = new MutationObserver(() => {
-    const anyVisible = rows.some((r) => !r.hidden);
-    empty?.classList.toggle('hidden', anyVisible);
-    list?.classList.toggle('hidden', !anyVisible);
+  import { manifest, getState, subscribe, setFont, loadFont, familyCss } from '../scripts/site-font';
+
+  /* ---------- Hero picks + marquee: wear a font ---------- */
+  const wearBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-hero-wear]')];
+  wearBtns.forEach((b) =>
+    b.addEventListener('click', () => {
+      const slug = b.dataset.heroWear!;
+      void setFont(getState().font === slug ? null : slug);
+    }),
+  );
+  document.querySelector('[data-hero-surprise]')?.addEventListener('click', () => {
+    const current = getState().font;
+    const pool = Object.keys(manifest).filter((s) => s !== current);
+    void setFont(pool[Math.floor(Math.random() * pool.length)]);
   });
-  for (const r of rows) observer.observe(r, { attributes: true, attributeFilter: ['hidden'] });
+  const status = document.querySelector<HTMLElement>('[data-hero-status]');
+
+  /* ---------- Card "Try on site" buttons ---------- */
+  const tryBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-try]')];
+  tryBtns.forEach((b) =>
+    b.addEventListener('click', () => {
+      const slug = b.dataset.try!;
+      void setFont(getState().font === slug ? null : slug);
+    }),
+  );
+
+  const renderWear = () => {
+    const s = getState();
+    const f = s.font ? manifest[s.font] : null;
+    wearBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.heroWear === s.font)));
+    tryBtns.forEach((b) => {
+      const on = b.dataset.try === s.font;
+      const loading = s.status === 'loading' && s.pending === b.dataset.try;
+      b.setAttribute('aria-pressed', String(on));
+      b.querySelector('[data-try-label]')!.textContent = loading ? 'Loading…' : on ? 'Wearing ✓' : 'Try on site';
+      b.closest('[data-card-body]')?.toggleAttribute('data-wearing', on);
+    });
+    if (status) {
+      if (s.status === 'loading' && s.pending) status.textContent = `Loading ${manifest[s.pending]?.name}…`;
+      else if (s.status === 'error' && s.pending) status.textContent = `${manifest[s.pending]?.name} couldn’t load. Try again.`;
+      else if (f) {
+        status.innerHTML = '';
+        status.append('Right now: ');
+        const a = document.createElement('a');
+        a.href = `/fonts/${f.slug}`;
+        a.className = 'text-accent font-semibold hover:underline';
+        a.textContent = f.name;
+        status.append(a, '. Click it again, or hit Reset, to go back.');
+      } else status.textContent = 'Right now: Fontlog’s own fonts.';
+    }
+  };
+  renderWear();
+  subscribe(renderWear);
+
+  /* ---------- Marquee pause ---------- */
+  const marquee = document.querySelector<HTMLElement>('[data-marquee]');
+  const pauseBtn = document.querySelector<HTMLButtonElement>('[data-marquee-pause]');
+  pauseBtn?.addEventListener('click', () => {
+    const paused = marquee!.toggleAttribute('data-paused');
+    pauseBtn.textContent = paused ? 'Play' : 'Pause';
+  });
+
+  /* ---------- Glyph card ---------- */
+  const card = document.querySelector<HTMLElement>('[data-glyph-card]');
+  if (card) {
+    const glyph = card.querySelector<HTMLElement>('[data-glyph]')!;
+    const name = card.querySelector<HTMLElement>('[data-glyph-name]')!;
+    const caption = card.querySelector<HTMLElement>('[data-glyph-caption]')!;
+    const readout = card.querySelector<HTMLElement>('[data-glyph-readout]')!;
+    const range = card.querySelector<HTMLInputElement>('[data-glyph-range]')!;
+    const guides = [...card.querySelectorAll<HTMLElement>('[data-guide]')];
+    const ctx = document.createElement('canvas').getContext('2d');
+
+    const DEFAULT = {
+      name: 'Bricolage Grotesque',
+      css: getComputedStyle(document.documentElement).getPropertyValue('--default-heading').trim(),
+      measureFamily: '"Bricolage Grotesque Variable"',
+      weights: [200, 800],
+      variable: true,
+    };
+    let current = DEFAULT;
+    let weight = 600;
+    let weights: number[] = [];
+
+    const snap = (w: number) => {
+      if (current.variable) return Math.round(w / 10) * 10;
+      return weights.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
+    };
+
+    const measure = () => {
+      if (!ctx) return;
+      const px = parseFloat(getComputedStyle(glyph).fontSize);
+      ctx.font = `${weight} ${px}px ${current.measureFamily}`;
+      const m = (t: string) => ctx.measureText(t);
+      const asc = m('Ag').fontBoundingBoxAscent;
+      const desc = m('Ag').fontBoundingBoxDescent;
+      if (!asc) return;
+      // line-height = content area, so the baseline sits exactly `asc` from the top.
+      glyph.style.lineHeight = `${asc + desc}px`;
+      const ys: Record<string, number> = {
+        ascender: asc - m('dhkl').actualBoundingBoxAscent,
+        'cap height': asc - m('HIE').actualBoundingBoxAscent,
+        'x-height': asc - m('xvz').actualBoundingBoxAscent,
+        baseline: asc,
+        descender: asc + m('gpqy').actualBoundingBoxDescent,
+      };
+      // Labels sit on the right; when two lines crowd each other, flip one left.
+      let lastY = -Infinity;
+      let lastLeft = false;
+      [...guides]
+        .sort((a, b) => ys[a.dataset.guide!] - ys[b.dataset.guide!])
+        .forEach((g) => {
+          const y = ys[g.dataset.guide!];
+          const crowded = y - lastY < 16;
+          const left = crowded ? !lastLeft : false;
+          g.toggleAttribute('data-left', left);
+          lastY = y;
+          lastLeft = left;
+          g.style.top = `${y}px`;
+          g.toggleAttribute('data-ready', true);
+        });
+    };
+
+    const setWeight = (w: number) => {
+      weight = snap(Math.min(Math.max(w, Number(range.min)), Number(range.max)));
+      glyph.style.fontWeight = String(weight);
+      glyph.style.fontVariationSettings = current.variable ? `"wght" ${weight}` : '';
+      range.value = String(weight);
+      readout.textContent = `wght ${weight}`;
+      measure();
+    };
+
+    const apply = async () => {
+      const s = getState();
+      const f = s.font ? manifest[s.font] : null;
+      if (f) {
+        current = {
+          name: f.name,
+          css: familyCss(f.slug),
+          measureFamily: `"${f.family}"`,
+          weights: [f.weights[0], f.weights[f.weights.length - 1]],
+          variable: f.variable,
+        };
+        weights = f.weights;
+        try {
+          await loadFont(f.slug);
+        } catch {
+          /* fall back to whatever renders */
+        }
+      } else {
+        current = DEFAULT;
+        weights = [];
+      }
+      if (getState().font !== (f?.slug ?? null)) return; // changed while loading
+      glyph.style.fontFamily = current.css;
+      name.textContent = current.name;
+      caption.textContent = f
+        ? `${f.designer}. Move across the card to try every weight.`
+        : 'Fontlog’s heading font. Move your pointer across the card to change the weight.';
+      range.min = String(current.weights[0]);
+      range.max = String(current.weights[1]);
+      range.step = current.variable ? '10' : '1';
+      await document.fonts.ready;
+      setWeight(current.weights[0] <= 600 && 600 <= current.weights[1] ? 600 : current.weights[0]);
+    };
+
+    card.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const r = card.getBoundingClientRect();
+      const t = (e.clientX - r.left) / r.width;
+      setWeight(current.weights[0] + t * (current.weights[1] - current.weights[0]));
+    });
+    range.addEventListener('input', () => setWeight(Number(range.value)));
+    new ResizeObserver(() => measure()).observe(glyph);
+
+    void apply();
+    subscribe((s) => {
+      if (s.status === 'idle') void apply();
+    });
+  }
+
+  /* ---------- Shared sample text + lens ---------- */
+  const list = document.querySelector<HTMLElement>('[data-catalogue-list]');
+  const input = document.querySelector<HTMLInputElement>('[data-sample-input]');
+  const displays = [...document.querySelectorAll<HTMLElement>('[data-sample-display]')];
+  const reads = [...document.querySelectorAll<HTMLElement>('[data-sample-read]')];
+  const defaults = { display: displays[0]?.textContent?.trim() ?? '', read: reads[0]?.textContent?.trim() ?? '' };
+  input?.addEventListener('input', () => {
+    const v = input.value.trim();
+    displays.forEach((el) => (el.textContent = v || defaults.display));
+    reads.forEach((el) => (el.textContent = v || defaults.read));
+  });
+  const lensBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-lens]:is(button)')];
+  const setLens = (b: HTMLButtonElement) => {
+    lensBtns.forEach((x) => {
+      const on = x === b;
+      x.setAttribute('aria-checked', String(on));
+      x.tabIndex = on ? 0 : -1;
+    });
+    list?.setAttribute('data-lens', b.dataset.lens!);
+  };
+  lensBtns.forEach((b, i) => {
+    b.addEventListener('click', () => setLens(b));
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = lensBtns[(i + 1) % lensBtns.length];
+      next.focus();
+      setLens(next);
+    });
+  });
+
+  /* ---------- Pairing teaser ---------- */
+  const teaser = document.querySelector<HTMLElement>('[data-pair-teaser]');
+  if (teaser) {
+    const h = teaser.querySelector<HTMLSelectElement>('[data-pair-h]')!;
+    const b = teaser.querySelector<HTMLSelectElement>('[data-pair-b]')!;
+    const heading = teaser.querySelector<HTMLElement>('[data-pair-heading]')!;
+    const body = teaser.querySelector<HTMLElement>('[data-pair-body]')!;
+    const cap = teaser.querySelector<HTMLElement>('[data-pair-caption]')!;
+    const link = teaser.querySelector<HTMLAnchorElement>('[data-pair-link]')!;
+    const fam: Record<string, [string, number]> = JSON.parse(heading.dataset.families ?? '{}');
+    const update = () => {
+      const [hf, hw] = fam[h.value];
+      const [bf] = fam[b.value];
+      heading.style.fontFamily = `"${hf}", ui-sans-serif, system-ui, sans-serif`;
+      heading.style.fontWeight = String(hw);
+      body.style.fontFamily = `"${bf}", ui-sans-serif, system-ui, sans-serif`;
+      cap.textContent = `${manifest[h.value]?.name} + ${manifest[b.value]?.name}`;
+      link.href = `/pair?h=${h.value}&b=${b.value}`;
+    };
+    h.addEventListener('change', update);
+    b.addEventListener('change', update);
+  }
 </script>

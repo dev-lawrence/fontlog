@@ -1,14 +1,28 @@
+import { fontsourceImports } from './fontsource';
 import type { CollectionEntry } from 'astro:content';
 
 type FontData = CollectionEntry<'fonts'>['data'];
 
-export type Snippet = {
-  id: string;
-  label: string;
-  /** Syntax-highlight hint / fenced-code language. */
+export type RecipeStep = {
+  title?: string;
+  /** Syntax hint, shown as a small label. */
   lang: string;
   code: string;
+};
+
+export type Recipe = {
+  id: 'fontsource' | 'next-font' | 'google-cdn' | 'self-host' | 'tailwind';
+  label: string;
+  steps: RecipeStep[];
   note?: string;
+};
+
+export type InstallInfo = {
+  recipes: Recipe[];
+  /** Brief for an LLM coding agent (secondary). */
+  prompt: string;
+  /** Family name to use in CSS after the first recipe is applied. */
+  loadedFamily: string;
 };
 
 const GENERIC: Record<FontData['classification'], string> = {
@@ -18,97 +32,178 @@ const GENERIC: Record<FontData['classification'], string> = {
   display: 'sans-serif',
 };
 
-/** Build the ordered list of install paths that actually apply to a font. */
-export function installSnippets(font: FontData): Snippet[] {
-  const out: Snippet[] = [];
+const THEME_KEY: Record<FontData['classification'], string> = {
+  sans: 'font-sans',
+  serif: 'font-serif',
+  mono: 'font-mono',
+  display: 'font-display',
+};
+
+/** Build the install recipes that the font's metadata actually supports. */
+export function installInfo(font: FontData): InstallInfo {
+  const recipes: Recipe[] = [];
   const fallback = GENERIC[font.classification];
+  const fsFamily = font.fontsourceFamily ?? font.family;
+  const fsImports = font.fontsource
+    ? fontsourceImports(font.fontsource, font.variable, font.weights)
+        .map((i) => `import '${i}';`)
+        .join('\n')
+    : '';
+  const weightList = font.weights.map((w) => `'${w}'`).join(', ');
 
   if (font.fontsource) {
-    const family = font.fontsourceFamily ?? font.family;
-    out.push({
-      id: 'npm',
-      label: 'npm (Fontsource)',
-      lang: 'bash',
-      code: `pnpm add ${font.fontsource}\n# npm install ${font.fontsource}\n# yarn add ${font.fontsource}`,
-    });
-    out.push({
+    recipes.push({
       id: 'fontsource',
-      label: 'Import & use',
-      lang: 'ts',
-      code: `import '${font.fontsource}';\n\n/* then, in your CSS */\nfont-family: '${family}', ${fallback};`,
+      label: 'Fontsource',
+      steps: [
+        {
+          title: '1. Install the package',
+          lang: 'bash',
+          code: `pnpm add ${font.fontsource}\n# npm install ${font.fontsource}\n# yarn add ${font.fontsource}`,
+        },
+        {
+          title: '2. Import it and set the family',
+          lang: 'ts',
+          code: `${fsImports}\n\n/* then, in your CSS */\nfont-family: '${fsFamily}', ${fallback};`,
+        },
+      ],
       note: font.fontsourceFamily
-        ? `Fontsource appends “Variable” to the family name for variable fonts — use “${family}”, not “${font.family}”.`
+        ? `Fontsource names this family \u201c${font.fontsourceFamily}\u201d, not \u201c${font.family}\u201d. Use that name in CSS.`
         : undefined,
     });
   }
 
   if (font.nextFont) {
-    out.push({
+    const v = camel(font.nextFont);
+    recipes.push({
       id: 'next-font',
-      label: 'next/font',
-      lang: 'tsx',
-      code: [
-        `import { ${font.nextFont} } from 'next/font/google';`,
-        ``,
-        `const ${camel(font.nextFont)} = ${font.nextFont}({`,
-        `  subsets: ['latin'],`,
-        `  display: 'swap',`,
-        font.variable ? `  axes: [],` : `  weight: ['${font.featuredWeight}'],`,
-        `});`,
-        ``,
-        `// <body className={${camel(font.nextFont)}.className}>`,
-      ].join('\n'),
-      note: 'Self-hosted and optimised at build time — no network request to Google.',
+      label: 'Next.js',
+      steps: [
+        {
+          lang: 'tsx',
+          code: [
+            `import { ${font.nextFont} } from 'next/font/google';`,
+            ``,
+            `const ${v} = ${font.nextFont}({`,
+            `  subsets: ['latin'],`,
+            `  display: 'swap',`,
+            font.variable ? undefined : `  weight: [${weightList}],`,
+            `});`,
+            ``,
+            `// <body className={${v}.className}>`,
+          ]
+            .filter((l) => l !== undefined)
+            .join('\n'),
+        },
+      ],
+      note: 'next/font downloads the files at build time and serves them from your own domain.',
     });
   }
 
   if (font.googleFontsSpec) {
-    out.push({
+    recipes.push({
       id: 'google-cdn',
-      label: 'Google Fonts (CDN)',
-      lang: 'html',
-      code: [
-        `<link rel="preconnect" href="https://fonts.googleapis.com" />`,
-        `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />`,
-        `<link`,
-        `  href="https://fonts.googleapis.com/css2?family=${font.googleFontsSpec}&display=swap"`,
-        `  rel="stylesheet"`,
-        `/>`,
-        ``,
-        `/* CSS */`,
-        `font-family: '${font.family}', ${fallback};`,
-      ].join('\n'),
-      note: 'Quickest to paste in, but adds a third-party request. Prefer self-hosting for production.',
+      label: 'Google Fonts',
+      steps: [
+        {
+          title: 'Add to your <head>',
+          lang: 'html',
+          code: [
+            `<link rel="preconnect" href="https://fonts.googleapis.com" />`,
+            `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />`,
+            `<link`,
+            `  href="https://fonts.googleapis.com/css2?family=${font.googleFontsSpec}&display=swap"`,
+            `  rel="stylesheet"`,
+            `/>`,
+          ].join('\n'),
+        },
+        {
+          title: 'Use it in CSS',
+          lang: 'css',
+          code: `font-family: '${font.family}', ${fallback};`,
+        },
+      ],
+      note: 'Quickest to try, but it adds a third-party request. Self-host for production.',
     });
   }
 
-  out.push({
+  recipes.push({
     id: 'self-host',
     label: 'Self-host',
-    lang: 'css',
-    code: [
-      `/* Download the ${font.license} files from the source below, then: */`,
-      `@font-face {`,
-      `  font-family: '${font.family}';`,
-      `  src: url('/fonts/${slugish(font.family)}.woff2') format('woff2');`,
-      font.variable
-        ? `  font-weight: ${font.weights[0]} ${font.weights[font.weights.length - 1]};`
-        : `  font-weight: ${font.featuredWeight};`,
-      `  font-display: swap;`,
+    steps: [
+      {
+        lang: 'css',
+        code: [
+          `/* Download the ${font.license} files from the source, then: */`,
+          `@font-face {`,
+          `  font-family: '${font.family}';`,
+          `  src: url('/fonts/${slugish(font.family)}.woff2') format('woff2');`,
+          font.variable
+            ? `  font-weight: ${font.weights[0]} ${font.weights[font.weights.length - 1]};`
+            : `  font-weight: ${font.featuredWeight};`,
+          `  font-display: swap;`,
+          `}`,
+        ].join('\n'),
+      },
+    ],
+    note: font.variable
+      ? `Files: ${font.sourceUrl}`
+      : `Static font: add one @font-face block per weight you use (${font.weights.join(', ')}). Files: ${font.sourceUrl}`,
+  });
+
+  if (font.fontsource || font.googleFontsSpec) {
+    const themeFamily = font.fontsource ? fsFamily : font.family;
+    const key = THEME_KEY[font.classification];
+    const css = [
+      `@import 'tailwindcss';`,
+      ...(font.fontsource
+        ? fontsourceImports(font.fontsource, font.variable, font.weights).map(
+            (i) => `@import '${i}';`,
+          )
+        : []),
+      ``,
+      `@theme {`,
+      `  --${key}: '${themeFamily}', ${fallback === 'sans-serif' ? 'ui-sans-serif, system-ui, sans-serif' : fallback};`,
       `}`,
-    ].join('\n'),
-    note: `Files: ${font.sourceUrl}`,
-  });
+    ]
+      .filter((l) => l !== undefined)
+      .join('\n');
+    const steps: RecipeStep[] = [
+      {
+        title: font.fontsource ? 'In your main CSS file' : '1. In your main CSS file',
+        lang: 'css',
+        code: css,
+      },
+    ];
+    if (font.fontsource) {
+      steps[0].title = '2. In your main CSS file';
+      steps.unshift({
+        title: '1. Install the package',
+        lang: 'bash',
+        code: `pnpm add ${font.fontsource}\n# npm install ${font.fontsource}`,
+      });
+    } else {
+      steps.unshift({
+        title: '1. Load the font (Google Fonts link in your <head>)',
+        lang: 'html',
+        code: `<link\n  href="https://fonts.googleapis.com/css2?family=${font.googleFontsSpec}&display=swap"\n  rel="stylesheet"\n/>`,
+      });
+      steps[1].title = '2. Register it in your Tailwind theme';
+    }
+    steps.push({
+      title: `${steps.length + 1}. Use the utility`,
+      lang: 'html',
+      code: `<p class="${key}">The quick brown fox</p>`,
+    });
+    recipes.push({
+      id: 'tailwind',
+      label: 'Tailwind v4',
+      steps,
+      note: `Defining --${key} in @theme replaces the default and generates the \`${key}\` utility.`,
+    });
+  }
 
-  out.push({
-    id: 'ai-prompt',
-    label: 'AI / agent prompt',
-    lang: 'prompt',
-    code: aiPrompt(font, fallback),
-    note: 'Paste into Claude Code, Codex, T3 Code, Cursor or similar — it has what an agent needs to wire the font up itself.',
-  });
-
-  return out;
+  return { recipes, prompt: aiPrompt(font, fallback), loadedFamily: fsFamily };
 }
 
 /** A self-contained brief an LLM coding agent can act on without touching this site again. */
@@ -128,7 +223,7 @@ function aiPrompt(font: FontData, fallback: string): string {
   if (font.googleFontsSpec) lines.push(`- Google Fonts CDN family param: ${font.googleFontsSpec}`);
 
   lines.push(
-    `- License: ${font.license} — ${font.licenseSummary}`,
+    `- License: ${font.license}. ${font.licenseSummary}`,
     `- Source: ${font.sourceUrl}`,
     '',
     'Detect how this project already loads fonts (Fontsource import, next/font, Tailwind @theme, ' +

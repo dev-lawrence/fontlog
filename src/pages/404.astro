@@ -2,15 +2,23 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Not found" description="That page doesn't exist.">
-  <div class="py-16 text-center">
-    <p class="text-6xl font-semibold tracking-tight">404</p>
-    <p class="text-muted mt-3">That page set off into the whitespace and never came back.</p>
-    <a
-      href="/"
-      class="border-border hover:border-accent mt-6 inline-block rounded-md border px-4 py-2 text-sm transition"
+<BaseLayout title="Page not found" description="That page doesn't exist.">
+  <section
+    data-specimen="sand"
+    class="border-divider rounded-xl border px-6 py-14 sm:px-12 sm:py-20"
+  >
+    <p class="font-mono text-ink-2 text-base">Page not found</p>
+    <h1
+      class="font-heading mt-2 text-[7rem] leading-[0.9] font-bold tracking-[-0.04em] sm:text-[11rem] lg:text-[14rem]"
     >
-      Back to the catalogue
-    </a>
-  </div>
+      404
+    </h1>
+    <p class="text-ink mt-6 max-w-[44ch] text-lg">
+      There&rsquo;s nothing at this address. It may have moved, or the link may have a typo.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/" class="btn btn-primary">Back to the catalogue</a>
+      <a href="/pair" class="btn btn-quiet">Try the pairing playground</a>
+    </div>
+  </section>
 </BaseLayout>

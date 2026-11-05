@@ -5,60 +5,105 @@ import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 interface Props {
   code: string;
   lang?: string;
+  /** Short heading for the block, e.g. "1. Install the package". */
   label?: string;
   note?: string;
 }
 
 const { code, lang = 'text', label, note } = Astro.props;
+const accessibleName = label ? `${label} (${lang})` : `${lang} code`;
 ---
 
-<figure class="border-border bg-surface rounded-lg border">
-  {
-    label && (
-      <figcaption class="border-border text-muted flex items-center justify-between border-b px-4 py-2 text-xs font-medium tracking-wide uppercase">
-        <span>{label}</span>
-        <span class="text-faint normal-case">{lang}</span>
-      </figcaption>
-    )
-  }
-  <div class="relative">
-    <pre
-      class="overflow-x-auto px-4 py-3.5 font-mono text-[13px] leading-relaxed"
-      data-code><code>{code}</code></pre>
-    <button
-      type="button"
-      data-copy
-      class="border-border bg-bg text-muted hover:text-text absolute top-2.5 right-2.5 grid h-8 w-8 place-items-center rounded-md border transition"
-      aria-label="Copy to clipboard"
-    >
-      <Icon icon={Copy01Icon} size={15} class="i-copy" />
-      <Icon icon={Tick02Icon} size={15} class="i-check hidden" />
-    </button>
-  </div>
-  {note && <p class="border-border text-muted border-t px-4 py-2.5 text-[13px]">{note}</p>}
+<figure class="code-block panel overflow-hidden">
+  <figcaption
+    class="border-divider bg-raised flex min-h-12 items-center justify-between gap-3 border-b py-1 pr-1.5 pl-4"
+  >
+    <span class="text-ink min-w-0 text-sm font-semibold">
+      {label ?? lang}
+      {label && <span class="text-ink-2 ml-2 font-mono text-xs font-normal">{lang}</span>}
+    </span>
+    <span class="flex items-center gap-2" data-js-only>
+      <span class="copy-status meta" role="status" aria-live="polite" data-status></span>
+      <button type="button" data-copy class="btn btn-quiet !min-h-11 !px-3 !py-1 !text-sm">
+        <Icon icon={Copy01Icon} size={16} class="i-copy" />
+        <Icon icon={Tick02Icon} size={16} class="i-check hidden" />
+        <span data-copy-label>Copy code</span>
+      </button>
+    </span>
+  </figcaption>
+  <pre
+    class="overflow-x-auto px-4 py-4 font-mono text-[0.9375rem] leading-relaxed"
+    tabindex="0"
+    aria-label={accessibleName}
+    data-code><code>{code}</code></pre>
+  {note && <p class="border-divider meta border-t px-4 py-3 text-pretty">{note}</p>}
 </figure>
 
 <style>
+  .copy-status:empty {
+    display: none;
+  }
+  .copy-status[data-state='copied'] {
+    /* announced to screen readers; the button label already shows the state */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .copy-status[data-state='error'] {
+    color: var(--ink);
+    font-weight: 600;
+    max-width: 16rem;
+    text-align: right;
+    line-height: 1.15;
+  }
   button[data-copied] .i-copy {
     display: none;
   }
   button[data-copied] .i-check {
     display: block;
-    color: var(--color-accent);
+    color: var(--accent);
   }
 </style>
 
 <script>
-  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const code = btn.parentElement?.querySelector('[data-code]')?.textContent ?? '';
-      try {
-        await navigator.clipboard.writeText(code);
-        btn.dataset.copied = 'true';
-        window.setTimeout(() => delete btn.dataset.copied, 1500);
-      } catch {
-        /* clipboard blocked — no-op */
+  const timers = new WeakMap<HTMLButtonElement, number>();
+
+  document.addEventListener('click', async (event) => {
+    const btn = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-copy]');
+    if (!btn) return;
+    const figure = btn.closest('figure');
+    const text = figure?.querySelector('[data-code]')?.textContent ?? '';
+    const status = figure?.querySelector<HTMLElement>('[data-status]');
+    const label = btn.querySelector<HTMLElement>('[data-copy-label]');
+    window.clearTimeout(timers.get(btn));
+
+    const reset = () => {
+      delete btn.dataset.copied;
+      if (label) label.textContent = 'Copy code';
+      if (status) {
+        status.textContent = '';
+        delete status.dataset.state;
       }
-    });
+    };
+
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.dataset.copied = 'true';
+      if (label) label.textContent = 'Copied';
+      if (status) {
+        status.dataset.state = 'copied';
+        status.textContent = 'Copied to clipboard';
+      }
+    } catch {
+      delete btn.dataset.copied;
+      if (label) label.textContent = 'Copy code';
+      if (status) {
+        status.dataset.state = 'error';
+        status.textContent = 'Couldn’t copy. Select the code below.';
+      }
+    }
+    timers.set(btn, window.setTimeout(reset, btn.dataset.copied ? 1500 : 4000));
   });
 </script>

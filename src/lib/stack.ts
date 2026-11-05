@@ -1,6 +1,7 @@
 import { createFontStack } from '@capsizecss/core';
 import type { CollectionEntry } from 'astro:content';
 
+import { fontsourceImports } from './fontsource';
 import { FONT_METRICS, SYSTEM_FALLBACK, GENERIC_STACK } from './capsize-metrics';
 
 type FontData = CollectionEntry<'fonts'>['data'];
@@ -11,9 +12,11 @@ export interface FontStack {
   classification: FontData['classification'];
   variable: boolean;
   fontsource: string | null;
-  /** Family list for the on-site preview — Google Fonts name first. */
+  /** Import specifiers needed to load the weights the playground can render. */
+  fontsourceImports: string[];
+  /** Family list for the on-site preview; Google Fonts name first. */
   previewFamily: string;
-  /** Family list for the copy-paste stack — Fontsource name first. */
+  /** Family list for the copy-paste stack; Fontsource name first. */
   cssFamily: string;
   /** `@font-face` for the metric-matched fallback, or '' when metrics are unknown. */
   fallbackFace: string;
@@ -46,6 +49,9 @@ export function fontStack(slug: string, data: FontData): FontStack {
     classification: data.classification,
     variable: data.variable,
     fontsource: data.fontsource ?? null,
+    fontsourceImports: data.fontsource
+      ? fontsourceImports(data.fontsource, data.variable, data.weights)
+      : [],
     previewFamily: list(data.family),
     cssFamily: list(data.fontsourceFamily ?? data.family),
     fallbackFace,

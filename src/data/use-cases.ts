@@ -3,7 +3,7 @@
  *
  * This is a different axis from `moods`: moods describe how a typeface *feels*
  * (warm, brutalist, technical); use cases describe the *job* it does on a page.
- * Tagged by context of use rather than industry vertical — "SaaS dashboard" is a
+ * Tagged by context of use rather than industry vertical; "SaaS dashboard" is a
  * useful hint, "fintech" is not, because good typefaces cross industries freely.
  *
  * Every tag on a font must carry a reason (see `bestFor` in the content schema).
@@ -34,11 +34,11 @@ export const USE_CASE_LABELS: Record<UseCase, string> = {
 
 /** One line on what the context actually demands of a typeface. */
 export const USE_CASE_DESCRIPTIONS: Record<UseCase, string> = {
-  'product-ui': 'Dashboards and app interfaces — legibility at small sizes, clear numerals.',
-  marketing: 'Landing and launch pages — personality in the headline weights.',
-  'dev-tools': 'Developer-facing products and their sites — technical tone, sans and mono in step.',
-  docs: 'Documentation and technical writing — sustained reading next to code.',
-  code: 'Code blocks, terminals and editors — monospaced, unambiguous glyphs.',
-  blog: 'Long-form writing and newsletters — comfort over a few thousand words.',
-  portfolio: 'Personal and creative sites — the type is part of the statement.',
+  'product-ui': 'Readable text and clear numerals for dashboards and app interfaces.',
+  marketing: 'Distinctive headlines for landing pages and product launches.',
+  'dev-tools': 'Related sans and mono styles for developer products and their sites.',
+  docs: 'Comfortable reading alongside code in docs and technical writing.',
+  code: 'Monospaced letters that are easy to tell apart in code, terminals, and editors.',
+  blog: 'Comfortable reading over long articles and newsletters.',
+  portfolio: 'Expressive type for portfolios and personal sites.',
 };

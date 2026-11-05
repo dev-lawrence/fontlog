@@ -1,5 +1,5 @@
 /**
- * Closed vocabulary of mood tags. Add to this list deliberately — never let it
+ * Closed vocabulary of mood tags. Add to this list deliberately; never let it
  * sprawl into near-duplicates, or the filtering stops meaning anything.
  */
 export const MOODS = [

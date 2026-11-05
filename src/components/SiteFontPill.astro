@@ -1,0 +1,95 @@
+---
+/** Floating status while the site is wearing a catalogue font. */
+---
+
+<div
+  class="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4"
+  data-site-font-pill
+  data-js-only
+>
+  <div
+    class="bg-ink text-page pointer-events-auto flex max-w-full translate-y-3 items-center gap-1 rounded-full py-1.5 pr-1.5 pl-4 text-sm opacity-0 shadow-[0_10px_30px_rgb(18_20_28/0.25)] transition-[opacity,translate] duration-200 data-[on]:translate-y-0 data-[on]:opacity-100"
+    data-pill
+    hidden
+  >
+    <span class="bg-accent mr-1 size-2 shrink-0 rounded-full" aria-hidden="true"></span>
+    <p class="min-w-0 truncate pr-2" role="status" aria-live="polite" data-pill-text></p>
+    <a
+      href="#"
+      class="bg-page/10 hover:bg-page/20 hidden shrink-0 items-center rounded-full px-3 py-1.5 font-semibold sm:inline-flex"
+      data-pill-use>Install</a
+    >
+    <button
+      type="button"
+      class="bg-page/10 hover:bg-page/20 shrink-0 rounded-full px-3 py-1.5 font-semibold"
+      data-pill-share
+    >
+      Share
+    </button>
+    <button
+      type="button"
+      class="bg-page text-ink hover:bg-page/90 shrink-0 rounded-full px-3 py-1.5 font-semibold"
+      data-pill-reset
+    >
+      Reset
+    </button>
+  </div>
+</div>
+
+<script>
+  import { manifest, getState, subscribe, reset, shareUrl, SCOPE_LABELS } from '../scripts/site-font';
+
+  const pill = document.querySelector<HTMLElement>('[data-pill]');
+  if (pill) {
+    const text = pill.querySelector<HTMLElement>('[data-pill-text]')!;
+    const use = pill.querySelector<HTMLAnchorElement>('[data-pill-use]')!;
+    const share = pill.querySelector<HTMLButtonElement>('[data-pill-share]')!;
+    pill.querySelector('[data-pill-reset]')!.addEventListener('click', reset);
+    share.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl());
+        share.textContent = 'Link copied';
+      } catch {
+        share.textContent = 'Couldn’t copy';
+      }
+      setTimeout(() => (share.textContent = 'Share'), 1600);
+    });
+
+    let hideTimer = 0;
+    const render = () => {
+      const s = getState();
+      const f = s.font ? manifest[s.font] : null;
+      const pending = s.pending ? manifest[s.pending] : null;
+      const show = Boolean(f) || s.status !== 'idle';
+      window.clearTimeout(hideTimer);
+      if (show) {
+        pill.hidden = false;
+        requestAnimationFrame(() => pill.setAttribute('data-on', ''));
+      } else {
+        pill.removeAttribute('data-on');
+        hideTimer = window.setTimeout(() => (pill.hidden = true), 220);
+      }
+      if (s.status === 'loading' && pending) text.textContent = `Loading ${pending.name}…`;
+      else if (s.status === 'error' && pending)
+        text.textContent = `${pending.name} couldn’t load. Try again.`;
+      else if (f)
+        text.innerHTML = '';
+      if (f && s.status === 'idle') {
+        const what =
+          s.scope === 'all' ? 'Viewing Fontlog in ' : `${SCOPE_LABELS[s.scope]} set in `;
+        text.append(what);
+        const b = document.createElement('strong');
+        b.textContent = f.name;
+        b.style.fontFamily = `"${f.family}", ${f.generic}`;
+        b.className = 'font-semibold';
+        text.append(b);
+      }
+      use.href = f ? `/fonts/${f.slug}#install` : '#';
+      use.textContent = f ? `Install ${f.name}` : 'Install';
+      share.hidden = !f;
+      use.classList.toggle('sm:inline-flex', Boolean(f));
+    };
+    render();
+    subscribe(render);
+  }
+</script>

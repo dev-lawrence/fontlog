@@ -1,0 +1,123 @@
+---
+import Icon from './Icon.astro';
+import { ArrowRight02Icon } from '@hugeicons/core-free-icons';
+import type { Font } from '../lib/fonts';
+import { specimenTheme } from '../lib/specimen';
+import { CLASSIFICATION_LABELS } from '../data/moods';
+import { USE_CASE_LABELS } from '../data/use-cases';
+
+interface Props {
+  font: Font;
+  /** `compact` is for related lists: smaller field, no blurb/meta. */
+  variant?: 'default' | 'compact';
+  /** Emit the filter data-attributes (catalogue only). */
+  filterable?: boolean;
+  class?: string;
+}
+
+const { font, variant = 'default', filterable = false, class: className } = Astro.props;
+const d = font.data;
+const compact = variant === 'compact';
+const theme = specimenTheme(font.id);
+
+const weights = [...d.weights].sort((a, b) => a - b);
+const weightMeta = d.variable
+  ? `Variable ${weights[0]}–${weights[weights.length - 1]}`
+  : `Static, ${weights.length} ${weights.length === 1 ? 'weight' : 'weights'}`;
+const uses = d.bestFor.slice(0, 2).map((b) => USE_CASE_LABELS[b.use]);
+
+const READ_SAMPLE =
+  'Good type gets out of the way. You notice the words and the rhythm, not the letters doing the work. That is the whole job.';
+const face = `font-family:"${d.family}", ui-sans-serif, system-ui, sans-serif; font-weight:${d.featuredWeight}`;
+const filterAttrs = filterable
+  ? {
+      'data-font': '',
+      'data-classification': d.classification,
+      'data-moods': d.moods.join(' '),
+      'data-uses': d.bestFor.map((b) => b.use).join(' '),
+      'data-search': [d.name, d.designer, d.blurb].join(' ').toLowerCase(),
+    }
+  : {};
+---
+
+{
+  compact ? (
+    <li class:list={['flex', className]} {...filterAttrs}>
+      <a
+        href={`/fonts/${font.id}`}
+        class="group border-divider bg-surface hover:border-[var(--card-hover-border)] flex w-full flex-col overflow-hidden rounded-2xl border transition-[border-color,box-shadow] duration-[170ms] hover:shadow-[var(--shadow-card)]"
+      >
+        <div data-specimen={theme} aria-hidden="true" class="flex min-h-40 flex-col justify-between gap-4 p-5" style={face}>
+          <span class="block text-base">{d.name}</span>
+          <span class="block text-[2.5rem] leading-[1.08] text-balance">Make it yours.</span>
+        </div>
+        <div class="flex flex-1 flex-col gap-1 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="font-body text-base font-semibold">{d.name}</h3>
+            <Icon icon={ArrowRight02Icon} size={20} class="arrow text-accent shrink-0" />
+          </div>
+          <p class="meta capitalize">{CLASSIFICATION_LABELS[d.classification]}</p>
+        </div>
+      </a>
+    </li>
+  ) : (
+    <li class:list={['relative flex', className]} data-card={font.id} {...filterAttrs}>
+      <article class="group border-divider bg-surface hover:border-[var(--card-hover-border)] data-[wearing]:border-accent data-[wearing]:ring-accent flex w-full flex-col rounded-2xl border transition-[border-color,box-shadow] duration-[170ms] hover:shadow-[var(--shadow-card)] data-[wearing]:ring-1" data-card-body>
+        <header class="flex items-center justify-between gap-3 px-5 pt-5 sm:px-6 sm:pt-6">
+          <div class="min-w-0">
+            <h3 class="font-body text-ink truncate text-base font-semibold">{d.name}</h3>
+            <p class="meta">
+              {CLASSIFICATION_LABELS[d.classification]} <span aria-hidden="true">·</span> {weightMeta}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="border-divider bg-surface text-ink hover:border-accent hover:text-accent aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-ink relative z-10 inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors duration-150"
+            data-try={font.id}
+            aria-pressed="false"
+            data-js-only
+          >
+            <span data-try-label>Try on site</span>
+            <span class="sr-only"> ({d.name})</span>
+          </button>
+        </header>
+
+        <div aria-hidden="true" class="text-ink relative px-5 pt-6 pb-7 sm:px-6 sm:pt-8 sm:pb-9" style={face}>
+          <span
+            class="block text-[3.25rem] leading-[1.05] text-balance break-words group-data-[lens=read]/list:hidden sm:text-[4.25rem]"
+            data-sample-display
+          >
+            Make it yours.
+          </span>
+          <span
+            class="hidden text-[1.1875rem] leading-[1.6] text-pretty group-data-[lens=read]/list:block"
+            style="font-weight:400"
+            data-sample-read
+          >
+            {READ_SAMPLE}
+          </span>
+        </div>
+
+        <footer class="border-divider mt-auto flex flex-col gap-3 border-t px-5 py-4 sm:px-6">
+          <p class="text-ink-2 text-[15px] leading-6 text-pretty">{d.blurb}</p>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            {uses.length > 0 && (
+              <ul class="flex flex-wrap gap-1.5" aria-label="Good for">
+                {uses.map((u) => (
+                  <li class="bg-raised text-ink-2 rounded-full px-2.5 py-0.5 text-[12.5px] leading-5">{u}</li>
+                ))}
+              </ul>
+            )}
+            <a
+              href={`/fonts/${font.id}`}
+              class="text-accent ml-auto inline-flex min-h-10 items-center gap-1 text-sm font-semibold after:absolute after:inset-0 after:rounded-2xl after:content-['']"
+            >
+              Read notes<span class="sr-only"> on {d.name}</span>
+              <Icon icon={ArrowRight02Icon} size={16} class="arrow" />
+            </a>
+          </div>
+        </footer>
+      </article>
+    </li>
+  )
+}

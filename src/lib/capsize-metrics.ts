@@ -3,7 +3,7 @@
  *
  * When you add a font to the catalogue, add a line here too: import its metrics
  * from `@capsizecss/metrics/<camelCaseName>` and map it by slug. If a font has no
- * entry, the playground still works — it just omits the fallback `@font-face` for it.
+ * entry, the playground still works; it just omits the fallback `@font-face` for it.
  */
 import type { FontMetrics } from '@capsizecss/core';
 

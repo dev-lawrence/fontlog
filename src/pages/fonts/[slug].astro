@@ -2,14 +2,17 @@
 import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TypePreview from '../../components/TypePreview.tsx';
-import CodeBlock from '../../components/CodeBlock.astro';
+import InstallSection from '../../components/InstallSection.astro';
 import SeenOn from '../../components/SeenOn.astro';
 import BestFor from '../../components/BestFor.astro';
+import FontCard from '../../components/FontCard.astro';
 import Icon from '../../components/Icon.astro';
 import { ArrowUpRight01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
-import { getFonts, resolveRefs } from '../../lib/fonts';
-import { installSnippets } from '../../lib/install';
-import { previewStylesheet, fontLinks } from '../../lib/gfonts';
+import { getFonts, resolveRefs, type Font } from '../../lib/fonts';
+import { installInfo } from '../../lib/install';
+import { previewStylesheet, listStylesheet, fontLinks } from '../../lib/gfonts';
+import { specimenTheme } from '../../lib/specimen';
+import { CLASSIFICATION_LABELS } from '../../data/moods';
 import { PREVIEW_TEXT } from '../../consts';
 
 export async function getStaticPaths() {
@@ -21,56 +24,145 @@ const { font, fonts } = Astro.props;
 const d = font.data;
 const { Content } = await render(font);
 
-const snippets = installSnippets(d);
+const install = installInfo(d);
 const pairsWith = resolveRefs(d.pairsWith, fonts);
 const similarTo = resolveRefs(d.similarTo, fonts);
 
+// Load the preview range for this font plus each related font at its featured weight.
+const relatedFonts = new Map<string, Font>();
+for (const r of [...similarTo, ...pairsWith]) {
+  if (r.font && r.font.id !== font.id) relatedFonts.set(r.font.id, r.font);
+}
 const preview = previewStylesheet(d);
-const headExtra = preview ? fontLinks(preview) : undefined;
+const relatedSheet =
+  relatedFonts.size > 0 ? listStylesheet([...relatedFonts.values()].map((f) => f.data)) : null;
+const headExtra =
+  [
+    preview && fontLinks(preview),
+    relatedSheet && `<link rel="stylesheet" href="${relatedSheet}" />`,
+  ]
+    .filter(Boolean)
+    .join('\n') || undefined;
 
 const fallback =
   d.classification === 'serif' ? 'serif' : d.classification === 'mono' ? 'monospace' : 'sans-serif';
+const isMono = d.classification === 'mono';
+const theme = specimenTheme(font.id);
 
-const meta = [
-  d.designer && `by ${d.designer}`,
-  d.foundry,
-  `${d.released}`,
-  d.variable ? 'variable' : `${d.weights.length} weights`,
-].filter(Boolean);
+const weights = [...d.weights].sort((a, b) => a - b);
+const weightFact = d.variable
+  ? `Variable, ${weights[0]}–${weights[weights.length - 1]}`
+  : `Static: ${weights.join(', ')}`;
+
+const heroFacts = [
+  { label: 'Designer', value: d.designer },
+  d.foundry && { label: 'Foundry', value: d.foundry },
+  { label: 'Released', value: String(d.released) },
+  { label: 'Weights', value: weightFact },
+].filter(Boolean) as { label: string; value: string }[];
+
+const hasSeenOn = d.seenOn.length > 0;
+const hasRelated = pairsWith.length > 0 || similarTo.length > 0;
+
+const anchors = [
+  { href: '#preview', label: 'Preview' },
+  { href: '#install', label: 'Install' },
+  { href: '#notes', label: 'Notes' },
+  hasSeenOn && { href: '#in-use', label: 'In use' },
+].filter(Boolean) as { href: string; label: string }[];
+
+const pairHref = `/pair?${isMono ? 'm' : 'h'}=${font.id}`;
+// Pair links: the current font keeps its natural slot; a mono partner takes the code slot.
+const pairLink = (other: Font) => {
+  const otherMono = other.data.classification === 'mono';
+  if (otherMono && !isMono) return `/pair?h=${font.id}&m=${other.id}`;
+  if (isMono && !otherMono) return `/pair?h=${other.id}&m=${font.id}`;
+  return `/pair?h=${font.id}&b=${other.id}`;
+};
+
+const face = `font-family:"${d.family}", ${fallback}; font-weight:${d.featuredWeight}`;
 ---
 
 <BaseLayout
   title={d.name}
-  description={`${d.name}: ${d.blurb} ${d.license}, with install snippets for npm, next/font and Google Fonts.`}
+  description={`${d.name}: ${d.blurb} ${d.license}, with install snippets for Fontsource, Next.js, Google Fonts and Tailwind.`}
   ogImage={`/og/${font.id}.png`}
   headExtra={headExtra}
 >
-  <a href="/" class="text-muted hover:text-text inline-flex items-center gap-1 text-sm transition">
-    <Icon icon={ArrowRight01Icon} size={15} class="rotate-180" /> All typefaces
-  </a>
+  <nav aria-label="Breadcrumb" class="meta">
+    <ol class="flex flex-wrap items-center gap-1">
+      <li>
+        <a
+          href="/"
+          class="hover:text-ink inline-flex min-h-11 items-center underline-offset-4 hover:underline"
+        >
+          All typefaces
+        </a>
+      </li>
+      <li aria-hidden="true"><Icon icon={ArrowRight01Icon} size={14} /></li>
+      <li aria-current="page" class="text-ink font-medium">{d.name}</li>
+    </ol>
+  </nav>
 
-  <header class="border-border mt-6 border-b pb-8">
+  <!-- Specimen hero -->
+  <header
+    data-specimen={theme}
+    class="mt-2 overflow-hidden rounded-xl px-6 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16"
+  >
     <h1
-      class="text-[15vw] leading-[0.95] sm:text-7xl"
-      style={`font-family:"${d.family}", ${fallback}; font-weight:${d.featuredWeight}`}
+      class="text-[clamp(3rem,12vw,8rem)] leading-[0.95] tracking-tight text-balance"
+      style={face}
     >
       {d.name}
     </h1>
-    <p class="text-muted mt-4">{meta.join(' · ')}</p>
-    <p class="mt-2 max-w-2xl text-lg text-pretty">{d.blurb}</p>
+    <div
+      class="mt-8 space-y-1 text-2xl leading-snug break-words sm:text-3xl"
+      style={face}
+      aria-hidden="true"
+    >
+      <p>ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+      <p>abcdefghijklmnopqrstuvwxyz</p>
+      <p>0123456789</p>
+    </div>
+    <p class="mt-8 max-w-[56ch] text-lg text-pretty">{d.blurb}</p>
+
+    <dl class="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 sm:flex sm:flex-wrap sm:gap-x-12">
+      {
+        heroFacts.map((f) => (
+          <div>
+            <dt class="text-sm font-medium opacity-75">{f.label}</dt>
+            <dd class="mt-0.5 font-medium">{f.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="#install" class="btn btn-primary">Install {d.name}</a>
+      <a href={pairHref} class="btn btn-quiet">Pair this font</a>
+    </div>
   </header>
 
+  <nav aria-label="On this page" class="mt-4">
+    <ul class="flex flex-wrap gap-x-1 gap-y-0">
+      {
+        anchors.map((a) => (
+          <li>
+            <a
+              href={a.href}
+              class="text-ink-2 hover:text-ink inline-flex min-h-11 items-center px-3 text-[0.9375rem] font-medium underline-offset-[6px] transition-colors duration-150 hover:underline"
+            >
+              {a.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
   <!-- Preview -->
-  <section class="mt-10">
-    <div class="mb-3 flex items-center justify-between">
-      <h2 class="text-muted text-sm font-medium tracking-wide uppercase">Preview</h2>
-      <a
-        href={`/pair?${d.classification === 'mono' ? 'm' : 'h'}=${font.id}`}
-        class="text-muted decoration-border hover:decoration-accent text-sm underline underline-offset-4"
-      >
-        Pair it with another font &rarr;
-      </a>
-    </div>
+  <section id="preview" class="mt-8 scroll-mt-24" aria-labelledby="preview-title">
+    <h2 id="preview-title" class="mb-4 text-3xl leading-tight tracking-tight">Try {d.name}</h2>
     <TypePreview
       client:visible
       family={d.family}
@@ -82,143 +174,171 @@ const meta = [
     />
   </section>
 
-  <!-- The note -->
-  <section class="mt-12 grid gap-8 sm:grid-cols-[1fr_16rem]">
-    <div class="prose max-w-none">
-      <Content />
+  <div class="mt-16 grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
+    <div class="min-w-0 space-y-16">
+      <InstallSection name={d.name} info={install} />
+
+      <section id="notes" class="scroll-mt-24" aria-labelledby="notes-title">
+        <h2 id="notes-title" class="text-3xl leading-tight tracking-tight">
+          Why I keep it in the log
+        </h2>
+        <div class="prose prose-page mt-5">
+          <Content />
+        </div>
+
+        {
+          d.bestFor.length > 0 && (
+            <div class="mt-10">
+              <h3 class="mb-3 text-lg font-semibold">Best for</h3>
+              <BestFor items={d.bestFor} />
+            </div>
+          )
+        }
+      </section>
     </div>
-    <aside class="sm:border-border space-y-5 text-sm sm:border-l sm:pl-8">
-      <div>
-        <h3 class="text-muted font-medium">Weights</h3>
-        <p class="mt-1">{d.weights.join(' · ')}</p>
-      </div>
-      {
-        d.axes.length > 0 && (
-          <div>
-            <h3 class="text-muted font-medium">Axes</h3>
-            <ul class="mt-1 space-y-0.5">
-              {d.axes.map((a) => (
-                <li>{a}</li>
-              ))}
-            </ul>
-          </div>
-        )
-      }
-      <div>
-        <h3 class="text-muted font-medium">License</h3>
-        <p class="mt-1">
-          <a
-            href={d.licenseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="decoration-border hover:decoration-accent underline underline-offset-4"
-          >
-            {d.license}
-          </a>
-        </p>
-        <p class="text-muted mt-1 text-pretty">{d.licenseSummary}</p>
-      </div>
-      <div>
-        <h3 class="text-muted font-medium">Source</h3>
-        <p class="mt-1">
-          <a
-            href={d.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="decoration-border hover:decoration-accent inline-flex items-center gap-0.5 underline underline-offset-4"
-          >
-            {new URL(d.sourceUrl).hostname.replace('www.', '')}
-            <Icon icon={ArrowUpRight01Icon} size={13} class="text-faint" />
-          </a>
-        </p>
+
+    <!-- Facts + license rail. Sticky only when the viewport is tall enough to hold it. -->
+    <aside
+      aria-label="Facts and license"
+      class="lg:self-start lg:[@media(min-height:48rem)]:sticky lg:[@media(min-height:48rem)]:top-24"
+    >
+      <div class="panel space-y-6 p-5 sm:p-6">
+        <div>
+          <h2 class="text-lg font-semibold">Facts</h2>
+          <dl class="divide-divider mt-3 divide-y text-[0.9375rem]">
+            <div class="flex justify-between gap-4 py-2">
+              <dt class="text-ink-2">Style</dt>
+              <dd class="text-right">{CLASSIFICATION_LABELS[d.classification]}</dd>
+            </div>
+            <div class="flex justify-between gap-4 py-2">
+              <dt class="text-ink-2">Weights</dt>
+              <dd class="text-right">{weightFact}</dd>
+            </div>
+            {
+              d.axes.length > 0 && (
+                <div class="flex justify-between gap-4 py-2">
+                  <dt class="text-ink-2">Axes</dt>
+                  <dd class="text-right">{d.axes.join(', ')}</dd>
+                </div>
+              )
+            }
+            <div class="flex justify-between gap-4 py-2">
+              <dt class="text-ink-2">Released</dt>
+              <dd class="text-right">{d.released}</dd>
+            </div>
+            <div class="flex justify-between gap-4 py-2">
+              <dt class="text-ink-2">Designer</dt>
+              <dd class="text-right">{d.designer}</dd>
+            </div>
+            {
+              d.foundry && (
+                <div class="flex justify-between gap-4 py-2">
+                  <dt class="text-ink-2">Foundry</dt>
+                  <dd class="text-right">{d.foundry}</dd>
+                </div>
+              )
+            }
+          </dl>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-semibold">License</h2>
+          <p class="mt-3 font-semibold">
+            <a
+              href={d.licenseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="decoration-divider hover:decoration-accent underline underline-offset-4"
+            >
+              {d.license}<span class="sr-only"> (opens in a new tab)</span>
+            </a>
+          </p>
+          <p class="text-ink-2 mt-1 text-[0.9375rem] text-pretty">{d.licenseSummary}</p>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-semibold">Source</h2>
+          <p class="mt-3">
+            <a
+              href={d.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="decoration-divider hover:decoration-accent inline-flex min-h-8 items-center gap-1 [overflow-wrap:anywhere] underline underline-offset-4"
+            >
+              {new URL(d.sourceUrl).hostname.replace('www.', '')}
+              <span class="sr-only"> (opens in a new tab)</span>
+              <Icon icon={ArrowUpRight01Icon} size={14} class="text-ink-2 shrink-0" />
+            </a>
+          </p>
+        </div>
       </div>
     </aside>
-  </section>
+  </div>
 
-  <!-- Best for -->
   {
-    d.bestFor.length > 0 && (
-      <section class="mt-14">
-        <h2 class="text-xl font-semibold tracking-tight">Best for</h2>
-        <p class="text-muted mt-1 mb-5">
-          Where {d.name} earns its place — and why. My opinion, not a rule.
+    hasSeenOn && (
+      <section id="in-use" class="mt-16 scroll-mt-24" aria-labelledby="in-use-title">
+        <h2 id="in-use-title" class="text-3xl leading-tight tracking-tight">
+          Seen on
+        </h2>
+        <p class="lede mt-2 mb-6 max-w-[60ch]">
+          Real sites using {d.name}. Each opens in a new tab.
         </p>
-        <BestFor items={d.bestFor} />
-      </section>
-    )
-  }
-
-  <!-- Install -->
-  <section class="mt-14">
-    <h2 class="text-xl font-semibold tracking-tight">Get it</h2>
-    <p class="text-muted mt-1">
-      Pick the one that fits your setup. Self-hosting is best for production; the CDN link is
-      quickest to try.
-    </p>
-    <div class="mt-5 space-y-4">
-      {snippets.map((s) => <CodeBlock code={s.code} lang={s.lang} label={s.label} note={s.note} />)}
-    </div>
-  </section>
-
-  <!-- Seen on -->
-  {
-    d.seenOn.length > 0 && (
-      <section class="mt-14">
-        <h2 class="text-xl font-semibold tracking-tight">Seen on</h2>
-        <p class="text-muted mt-1 mb-5">Real sites using {d.name}. Click through to see it live.</p>
         <SeenOn items={d.seenOn} />
       </section>
     )
   }
 
-  <!-- Related -->
   {
-    (pairsWith.length > 0 || similarTo.length > 0) && (
-      <section class="border-border mt-14 grid gap-8 border-t pt-10 sm:grid-cols-2">
-        {similarTo.length > 0 && (
-          <div>
-            <h2 class="text-muted text-sm font-medium tracking-wide uppercase">
-              If you like this, try
-            </h2>
-            <ul class="mt-3 space-y-1.5">
-              {similarTo.map((r) => (
-                <li>
-                  {r.font ? (
-                    <a
-                      href={`/fonts/${r.slug}`}
-                      class="decoration-border hover:decoration-accent underline underline-offset-4"
-                    >
-                      {r.name}
-                    </a>
+    hasRelated && (
+      <section id="related" class="mt-16 scroll-mt-24" aria-label="Related typefaces">
+        <div class="space-y-12">
+          {similarTo.length > 0 && (
+            <div>
+              <h2 class="text-3xl leading-tight tracking-tight">Similar</h2>
+              <ul class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {similarTo.map((r) =>
+                  r.font ? (
+                    <FontCard font={r.font} variant="compact" />
                   ) : (
-                    <span class="text-muted">{r.name}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {pairsWith.length > 0 && (
-          <div>
-            <h2 class="text-muted text-sm font-medium tracking-wide uppercase">Pairs well with</h2>
-            <ul class="mt-3 space-y-1.5">
-              {pairsWith.map((r) => (
-                <li>
-                  {r.font ? (
-                    <a
-                      href={`/fonts/${r.slug}`}
-                      class="decoration-border hover:decoration-accent underline underline-offset-4"
-                    >
-                      {r.name}
-                    </a>
+                    <li class="panel text-ink-2 flex min-h-20 items-center px-5">{r.name}</li>
+                  ),
+                )}
+              </ul>
+            </div>
+          )}
+          {pairsWith.length > 0 && (
+            <div>
+              <h2 class="text-3xl leading-tight tracking-tight">Pairs with</h2>
+              <ul class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {pairsWith.map((r) =>
+                  r.font ? (
+                    <FontCard font={r.font} variant="compact" />
                   ) : (
-                    <span class="text-muted">{r.name}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                    <li class="panel text-ink-2 flex min-h-20 items-center px-5">{r.name}</li>
+                  ),
+                )}
+              </ul>
+              {pairsWith.some((r) => r.font) && (
+                <ul class="mt-4 flex flex-wrap gap-x-6">
+                  {pairsWith
+                    .filter((r) => r.font)
+                    .map((r) => (
+                      <li>
+                        <a
+                          href={pairLink(r.font!)}
+                          class="group text-accent inline-flex min-h-11 items-center gap-1 font-semibold underline-offset-4 hover:underline"
+                        >
+                          See {d.name} with {r.name} in the pair tool
+                          <Icon icon={ArrowRight01Icon} size={16} class="arrow" />
+                        </a>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
       </section>
     )
   }

@@ -1,77 +1,169 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { ArrowRight02Icon } from '@hugeicons/core-free-icons';
 import { getFonts } from '../lib/fonts';
-import { MOODS } from '../data/moods';
+import { SITE } from '../consts';
+import { MOODS, CLASSIFICATION_LABELS } from '../data/moods';
 import { USE_CASE_LABELS, USE_CASES } from '../data/use-cases';
 
-const count = (await getFonts()).length;
+const fonts = await getFonts();
+const count = fonts.length;
+
+// One real entry to explain the three tag groups.
+const example = fonts.find((f) => f.id === 'bricolage-grotesque') ?? fonts[0];
+const ex = example.data;
+
+const criteria = [
+  {
+    title: 'Used or seriously evaluated',
+    body: "I've used it on a real project, or I've sat with it long enough to have a genuine opinion. That's the whole bar.",
+  },
+  {
+    title: 'Open license',
+    body: 'Free for commercial use under an open license, mostly the SIL Open Font License. No paid fonts, no affiliate links.',
+  },
+  {
+    title: 'A useful note and a way to install it',
+    body: 'The page says why the font is here, including what to watch out for, and gives copy-paste install snippets.',
+  },
+];
 ---
 
 <BaseLayout
   title="About"
   description="Why Fontlog exists, how fonts get in, and what the notes mean."
 >
-  <div class="prose max-w-2xl">
-    <h1 class="text-3xl font-semibold tracking-tight">About Fontlog</h1>
+  <section class="grid items-center gap-10 pb-12 lg:grid-cols-2 lg:gap-16 lg:pb-16">
+    <div>
+      <h1
+        class="text-[2.5rem] leading-[1.02] font-semibold tracking-[-0.03em] text-balance sm:text-6xl"
+      >
+        A small log. A more considered choice.
+      </h1>
+    </div>
 
+    <figure
+      data-specimen="sand"
+      class="border-divider rounded-xl border p-6 sm:p-8"
+      aria-label="Typographic sample: the three typefaces Fontlog is set in"
+    >
+      <p class="font-heading text-[5.5rem] leading-none font-semibold tracking-tight sm:text-[7rem]" aria-hidden="true">
+        Aa
+      </p>
+      <p class="font-heading mt-6 text-2xl leading-tight font-semibold">Bricolage Grotesque</p>
+      <p class="font-body text-ink-2 mt-1 text-lg">Funnel Sans for the words in between.</p>
+      <p class="font-mono text-ink-2 mt-1 text-base">Inconsolata for code, 0123456789</p>
+    </figure>
+  </section>
+
+  <div class="prose-page space-y-6 text-lg leading-[1.7]">
     <p>
-      For years I set every project in Bricolage Grotesque. Not because I'd compared it against
-      anything &mdash; it just looked right, and picking a font is the kind of small decision that
-      quietly eats an evening. Every few months I'd go looking for something new, bounce between a
-      dozen tabs of specimens, licenses I couldn't parse, and install instructions that assumed I
-      was buying a desktop license, and give up.
+      For years, every project started with Bricolage Grotesque. I liked it, I knew it, and choosing
+      something else could take an evening. I'd open a dozen specimen tabs, get stuck on licenses
+      and install instructions, then go back to the font I already had.
     </p>
 
     <p>
-      Fontlog is the thing I wanted instead: a short, opinionated list of open-license typefaces
-      I've actually used or seriously evaluated. Not a directory of everything &mdash; Google Fonts
-      already does that. Every entry here is one I'd ship.
-    </p>
-
-    <h2>How a font gets in</h2>
-    <p>
-      I've used it on a real project, or I've sat with it long enough to have a genuine opinion.
-      That's the whole bar. If it's here, there's a reason, and the note on its page says what it is
-      &mdash; including what to watch out for.
-    </p>
-
-    <h2>What's on each page</h2>
-    <ul>
-      <li>A live preview you can type your own text into.</li>
-      <li>The license in one plain-English sentence, with a link to the real thing.</li>
-      <li>
-        Copy-paste install snippets: npm / Fontsource, <code>next/font</code>, Google Fonts, and a
-        self-host template.
-      </li>
-      <li>Real sites using the font, when I've found good ones.</li>
-      <li>
-        A &ldquo;best for&rdquo; list &mdash; the kinds of site the font suits, with a reason for
-        each.
-      </li>
-      <li>A few &ldquo;if you like this, try&rdquo; pointers.</li>
-    </ul>
-
-    <h2>The tags</h2>
-    <p>
-      Every font has a classification (sans, serif, mono, display) and one or more moods &mdash;
-      {MOODS.slice(0, -1).join(', ')}, or {MOODS.at(-1)}. They're deliberately vague, because
-      &ldquo;I want something warmer&rdquo; is usually how the search actually starts. Use the
-      filters on the home page to narrow things down.
-    </p>
-
-    <p>
-      Separately, most fonts carry a <strong>&ldquo;best for&rdquo;</strong> list &mdash;
-      {USE_CASES.map((u) => USE_CASE_LABELS[u]).join(', ')} &mdash; describing the job the typeface does
-      rather than how it feels. Every one of those tags has to come with a reason on the font's page;
-      a claim I can't justify in a sentence doesn't get made. They're judgement calls, not rules: plenty
-      of good typefaces work far outside the boxes I've put them in.
-    </p>
-
-    <h2>Everything is open</h2>
-    <p>
-      Every typeface listed is free for commercial use under an open license (mostly the SIL Open
-      Font License). No paid fonts, no affiliate links. The catalogue is small on purpose &mdash;
-      {count} right now &mdash; and grows only when I find something worth adding.
+      Fontlog keeps that search small. Every typeface here is one I've used or seriously evaluated,
+      with a note on where it works and what to watch for. Try it on this site, find a pairing,
+      and copy the setup into your project.
     </p>
   </div>
+
+  <section class="mt-16 sm:mt-20" aria-labelledby="how-in">
+    <h2 id="how-in" class="text-2xl font-semibold tracking-tight">How a font gets in</h2>
+    <ol class="mt-8 grid gap-8 md:grid-cols-3 md:gap-6">
+      {
+        criteria.map((c, i) => (
+          <li class="border-ink border-t pt-4">
+            <p class="font-mono text-ink-2 text-sm" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </p>
+            <h3 class="mt-2 text-xl leading-tight font-semibold">{c.title}</h3>
+            <p class="text-ink-2 mt-2 max-w-[44ch]">{c.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="mt-16 sm:mt-20" aria-labelledby="notes">
+    <div class="prose-page space-y-6 text-lg leading-[1.7]">
+      <h2 id="notes" class="text-2xl font-semibold tracking-tight">Reading an entry</h2>
+      <p>
+        Each entry explains why I'd use the font and where I'd be careful. You'll find:
+      </p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>A live preview you can type your own text into.</li>
+        <li>The license in one plain-English sentence, with a link to the real thing.</li>
+        <li>
+          Copy-paste install snippets: npm / Fontsource, <code class="font-mono text-[0.95em]">next/font</code>,
+          Google Fonts, and a self-host template.
+        </li>
+        <li>Real sites using the font, when I've found good ones.</li>
+        <li>
+          Suggested uses, with a reason for each.
+        </li>
+        <li>A few &ldquo;if you like this, try&rdquo; pointers.</li>
+      </ul>
+    </div>
+
+    <h3 class="mt-12 text-xl font-semibold tracking-tight">Style, Mood and Good for</h3>
+    <p class="text-ink-2 mt-2 max-w-[66ch]">
+      Three separate ways to filter the catalogue. Here they are on one real entry,
+      <a href={`/fonts/${example.id}`} class="text-accent underline underline-offset-4">{ex.name}</a>.
+    </p>
+
+    <dl class="panel mt-6 grid divide-y divide-divider md:grid-cols-3 md:divide-x md:divide-y-0">
+      <div class="p-5">
+        <dt class="text-ink-2 text-sm font-medium">Style</dt>
+        <dd class="mt-3 text-lg font-semibold">{CLASSIFICATION_LABELS[ex.classification]}</dd>
+        <dd class="meta mt-2">
+          The broad family: sans, serif, mono or display.
+        </dd>
+      </div>
+      <div class="p-5">
+        <dt class="text-ink-2 text-sm font-medium">Mood</dt>
+        <dd class="mt-3 text-lg font-semibold capitalize">{ex.moods.join(', ')}</dd>
+        <dd class="meta mt-2">
+          How it feels: {MOODS.slice(0, -1).join(', ')}, or {MOODS.at(-1)}. Start here when you
+          know the feeling you want but haven't found the font.
+        </dd>
+      </div>
+      <div class="p-5">
+        <dt class="text-ink-2 text-sm font-medium">Good for</dt>
+        <dd class="mt-3 text-lg font-semibold">
+          {ex.bestFor.map((b) => USE_CASE_LABELS[b.use]).join(', ')}
+        </dd>
+        <dd class="meta mt-2">
+          The job it does, not how it feels: {USE_CASES.map((u) => USE_CASE_LABELS[u]).join(', ')}.
+          Each one comes with a reason on the font's page.
+        </dd>
+      </div>
+    </dl>
+
+    <p class="text-ink-2 mt-6 max-w-[66ch]">
+      These are judgement calls, not rules: plenty of good typefaces work far outside the boxes
+      I've put them in. A claim I can't justify in a sentence doesn't get made.
+    </p>
+  </section>
+
+  <section class="mt-16 sm:mt-20" aria-labelledby="open">
+    <div class="prose-page space-y-6 text-lg leading-[1.7]">
+      <h2 id="open" class="text-2xl font-semibold tracking-tight">Everything is open</h2>
+      <p>
+        Every typeface listed is free for commercial use under an open license (mostly the SIL Open
+        Font License). There are {count} in the catalogue. I add another when I find one I'd use.
+      </p>
+    </div>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3">
+      <a href="/" class="btn btn-primary group">
+        Browse the catalogue
+        <Icon icon={ArrowRight02Icon} size={18} class="arrow" />
+      </a>
+      <a href={SITE.repo} class="btn btn-quiet" rel="noopener">View the source on GitHub</a>
+    </div>
+  </section>
 </BaseLayout>

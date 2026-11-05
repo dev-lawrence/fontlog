@@ -1,49 +1,54 @@
 ---
 import Icon from './Icon.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { TextFontIcon, GithubIcon } from '@hugeicons/core-free-icons';
-import { SITE } from '../consts';
+import SiteFontPicker from './SiteFontPicker.astro';
+import { TextFontIcon } from '@hugeicons/core-free-icons';
 
-const path = Astro.url.pathname;
-const isHome = path === '/';
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+// Exact match => "page"; detail pages keep the Catalogue link marked as the section.
+const links = [
+  { href: '/', label: 'Catalogue', current: path === '/' ? 'page' : path.startsWith('/fonts') ? 'true' : undefined },
+  { href: '/pair', label: 'Pair fonts', current: path === '/pair' ? 'page' : undefined },
+  { href: '/about', label: 'About', current: path === '/about' ? 'page' : undefined },
+] as const;
 ---
 
-<header class="border-border bg-bg/80 sticky top-0 z-40 border-b backdrop-blur-md">
-  <div class="container-page flex h-16 items-center justify-between">
+<header class="border-divider bg-page/85 sticky top-0 z-40 border-b backdrop-blur-md">
+  <div class="container-page flex min-h-14 flex-wrap items-center gap-x-4 sm:min-h-16">
     <a
       href="/"
-      class="flex items-center gap-2 font-semibold tracking-tight"
-      aria-current={isHome ? 'page' : undefined}
+      class="font-heading mr-auto flex min-h-11 items-center gap-2 text-xl font-bold tracking-tight"
+      aria-label="Fontlog, home"
     >
-      <Icon icon={TextFontIcon} size={22} class="text-accent" />
+      <span class="bg-accent text-accent-ink grid size-8 place-items-center rounded-lg" aria-hidden="true">
+        <Icon icon={TextFontIcon} size={18} />
+      </span>
       <span>Fontlog</span>
     </a>
 
-    <nav class="flex items-center gap-1 text-sm">
-      <a
-        href="/pair"
-        class="text-muted hover:bg-surface hover:text-text rounded-md px-3 py-1.5 transition"
-        aria-current={path === '/pair' ? 'page' : undefined}
-      >
-        Pair
-      </a>
-      <a
-        href="/about"
-        class="text-muted hover:bg-surface hover:text-text rounded-md px-3 py-1.5 transition"
-        aria-current={path === '/about' ? 'page' : undefined}
-      >
-        About
-      </a>
-      <a
-        href={SITE.repo}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-muted hover:bg-surface hover:text-text grid h-8 w-8 place-items-center rounded-md transition"
-        aria-label="Source on GitHub"
-      >
-        <Icon icon={GithubIcon} size={18} />
-      </a>
-      <ThemeToggle />
+    <nav aria-label="Main" class="order-3 -mx-2 flex w-full items-center sm:order-2 sm:mx-0 sm:w-auto">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            aria-current={l.current}
+            class:list={[
+              'flex min-h-11 items-center px-3 text-[15px] font-medium underline-offset-[10px] transition-colors duration-150',
+              l.current
+                ? 'text-ink underline decoration-2 decoration-accent'
+                : 'text-ink-2 hover:text-ink',
+            ]}
+          >
+            {l.label}
+          </a>
+        ))
+      }
     </nav>
+
+    <div class="order-2 flex items-center gap-1 sm:order-3 sm:ml-2">
+      <SiteFontPicker />
+      <ThemeToggle />
+    </div>
   </div>
 </header>

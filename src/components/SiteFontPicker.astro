@@ -1,0 +1,182 @@
+---
+/**
+ * Header control: wear any catalogue font across the whole site.
+ * Behaviour lives in src/scripts/site-font.ts; this is the UI.
+ */
+import { getFonts } from '../lib/fonts';
+import { CLASSIFICATION_LABELS } from '../data/moods';
+
+const fonts = await getFonts();
+---
+
+<div class="relative" data-site-font-picker data-js-only>
+  <button
+    type="button"
+    class="border-divider bg-surface text-ink hover:border-accent-soft flex min-h-10 items-center gap-2 rounded-full border py-1 pr-3 pl-1.5 text-sm font-medium transition-colors duration-150"
+    aria-expanded="false"
+    aria-controls="site-font-panel"
+    data-picker-toggle
+  >
+    <span
+      class="bg-accent text-accent-ink grid size-7 place-items-center rounded-full text-[13px] leading-none font-semibold"
+      aria-hidden="true"
+      data-picker-glyph>Aa</span
+    >
+    <span class="sr-only">Site font: </span>
+    <span class="max-w-[9rem] truncate" data-picker-name>Fontlog</span>
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" class="text-ink-2">
+      <path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+  </button>
+
+  <div
+    id="site-font-panel"
+    class="border-divider bg-surface z-50 max-sm:fixed max-sm:inset-x-4 max-sm:top-[3.75rem] sm:absolute sm:right-0 sm:mt-2 sm:w-[22rem] origin-top-right rounded-2xl border p-2 shadow-[0_12px_40px_rgb(18_20_28/0.14)]"
+    data-picker-panel
+    hidden
+  >
+    <div class="px-3 pt-2 pb-3">
+      <p class="text-ink text-sm font-semibold">Wear a font</p>
+      <p class="meta mt-0.5">Set this whole site in any font from the log.</p>
+      <div
+        role="radiogroup"
+        aria-label="What to change"
+        class="bg-raised mt-3 grid grid-cols-3 gap-1 rounded-full p-1"
+      >
+        {
+          (['headings', 'body', 'all'] as const).map((s) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked="false"
+              data-scope={s}
+              class="text-ink-2 aria-checked:bg-surface aria-checked:text-ink min-h-9 rounded-full text-[13px] font-medium transition-colors duration-150 aria-checked:shadow-sm"
+            >
+              {s === 'headings' ? 'Headings' : s === 'body' ? 'Body' : 'Everything'}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <ul class="max-h-[min(22rem,55vh)] overflow-y-auto" role="list">
+      {
+        fonts.map((f) => (
+          <li>
+            <button
+              type="button"
+              data-wear={f.id}
+              aria-pressed="false"
+              class="hover:bg-raised aria-pressed:bg-accent-wash group flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition-colors duration-150"
+            >
+              <span
+                class="text-ink truncate text-lg leading-7"
+                style={`font-family:"${f.data.family}", ui-sans-serif, system-ui, sans-serif; font-weight:${f.data.featuredWeight}`}
+              >
+                {f.data.name}
+              </span>
+              <span class="meta flex shrink-0 items-center gap-2">
+                <span class="group-aria-pressed:hidden">{CLASSIFICATION_LABELS[f.data.classification]}</span>
+                <span class="text-accent hidden font-semibold group-aria-pressed:inline">Wearing</span>
+              </span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="border-divider mt-2 grid gap-1 border-t px-1 pt-2">
+      <button
+        type="button"
+        class="text-ink-2 hover:text-ink hover:bg-raised min-h-11 rounded-lg px-2 py-2 text-left text-sm font-medium disabled:opacity-40"
+        data-picker-reset
+      >
+        Back to Fontlog’s fonts
+      </button>
+      <a
+        href="#"
+        class="text-accent hover:bg-accent-wash flex min-h-11 min-w-0 items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold hover:underline"
+        data-picker-use
+        hidden
+      >
+        <span class="min-w-0" data-picker-use-label>Install it</span>
+        <span class="shrink-0" aria-hidden="true">→</span>
+      </a>
+    </div>
+    <p class="meta px-3 pt-1 pb-2 text-xs">Font specimens keep their own faces. Code stays monospace.</p>
+  </div>
+</div>
+
+<script>
+  import { manifest, getState, subscribe, setFont, setScope, reset } from '../scripts/site-font';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-site-font-picker]')) {
+    const toggle = root.querySelector<HTMLButtonElement>('[data-picker-toggle]')!;
+    const panel = root.querySelector<HTMLElement>('[data-picker-panel]')!;
+    const name = root.querySelector<HTMLElement>('[data-picker-name]')!;
+    const glyph = root.querySelector<HTMLElement>('[data-picker-glyph]')!;
+    const useLink = root.querySelector<HTMLAnchorElement>('[data-picker-use]')!;
+    const useLabel = root.querySelector<HTMLElement>('[data-picker-use-label]')!;
+    const resetBtn = root.querySelector<HTMLButtonElement>('[data-picker-reset]')!;
+    const wearBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-wear]')];
+    const scopeBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-scope]')];
+
+    const open = (v: boolean) => {
+      panel.hidden = !v;
+      toggle.setAttribute('aria-expanded', String(v));
+    };
+    toggle.addEventListener('click', () => open(panel.hidden));
+    document.addEventListener('click', (e) => {
+      if (!panel.hidden && !root.contains(e.target as Node)) open(false);
+    });
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.hidden) {
+        open(false);
+        toggle.focus();
+      }
+    });
+
+    wearBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        const slug = b.dataset.wear!;
+        void setFont(getState().font === slug ? null : slug);
+      }),
+    );
+    scopeBtns.forEach((b) => b.addEventListener('click', () => setScope(b.dataset.scope as never)));
+    resetBtn.addEventListener('click', reset);
+
+    // Arrow keys move between scope radios.
+    scopeBtns.forEach((b, i) =>
+      b.addEventListener('keydown', (e) => {
+        const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        const next = scopeBtns[(i + d + scopeBtns.length) % scopeBtns.length];
+        next.focus();
+        next.click();
+      }),
+    );
+
+    const render = () => {
+      const s = getState();
+      const f = s.font ? manifest[s.font] : null;
+      const loading = s.status === 'loading' && s.pending ? manifest[s.pending] : null;
+      name.textContent = loading ? `Loading ${loading.name}…` : f ? f.name : 'Fontlog';
+      glyph.style.fontFamily = f ? `"${f.family}", ${f.generic}` : '';
+      wearBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.wear === s.font)));
+      scopeBtns.forEach((b) => {
+        const on = b.dataset.scope === s.scope;
+        b.setAttribute('aria-checked', String(on));
+        b.tabIndex = on ? 0 : -1;
+      });
+      resetBtn.disabled = !s.font;
+      useLink.hidden = !f;
+      if (f) {
+        useLink.href = `/fonts/${f.slug}#install`;
+        useLabel.textContent = `Install ${f.name}`;
+      }
+    };
+    render();
+    subscribe(render);
+  }
+</script>

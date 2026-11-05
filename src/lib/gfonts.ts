@@ -5,7 +5,7 @@ type FontData = CollectionEntry<'fonts'>['data'];
 const CSS2 = 'https://fonts.googleapis.com/css2';
 
 /**
- * Stylesheet URL for a single font page preview — includes the full weight
+ * Stylesheet URL for a single font page preview; includes the full weight
  * range (or static list) so the weight control has something to move through.
  */
 export function previewStylesheet(font: FontData): string | null {
@@ -14,21 +14,26 @@ export function previewStylesheet(font: FontData): string | null {
 }
 
 /**
- * One combined stylesheet for a list of fonts, each at its featured weight.
- * Used on the index, where every row is set in its own typeface.
+ * One combined stylesheet for a list of fonts at 400 + featured weight. Loaded
+ * site-wide (BaseLayout): cards, the font picker, and the marquee set each name
+ * in its own face. Browsers only fetch the files a page actually renders.
  */
 export function listStylesheet(fonts: FontData[]): string {
   const families = fonts
     .map((f) => {
       const name = f.family.trim().replace(/\s+/g, '+');
-      return `family=${name}:wght@${f.featuredWeight}`;
+      // 400 for body-size samples, plus the featured weight for display specimens.
+      const ws = [...new Set([400, f.featuredWeight])]
+        .filter((w) => f.weights.includes(w) || f.variable)
+        .sort((a, b) => a - b);
+      return `family=${name}:wght@${ws.join(';')}`;
     })
     .join('&');
   return `${CSS2}?${families}&display=swap`;
 }
 
 /**
- * One stylesheet covering every catalogue font at its full weight range — used
+ * One stylesheet covering every catalogue font at its full weight range; used
  * by the pairing playground, where headings and body need different weights.
  */
 export function playgroundStylesheet(fonts: FontData[]): string {

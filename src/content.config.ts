@@ -7,13 +7,13 @@ import { USE_CASES } from './data/use-cases';
 const seenOn = z.object({
   /** Name of the site or product using the font. */
   site: z.string(),
-  /** Live URL — the screenshot links here. */
+  /** Live URL; the screenshot links here. */
   url: z.string().url(),
   /** Screenshot next to the MDX file. Optional: a slot is shown until one is added. */
   image: z.string().optional(),
   /** Where the font is used, e.g. "headings", "body", "whole site". */
   usage: z.string().optional(),
-  /** Month captured, "YYYY-MM" — so stale examples are visible. */
+  /** Month captured, "YYYY-MM"; so stale examples are visible. */
   captured: z.string().regex(/^\d{4}-\d{2}$/),
 });
 
@@ -31,7 +31,7 @@ const fonts = defineCollection({
       released: z.number().int(),
       classification: z.enum(CLASSIFICATIONS),
       moods: z.array(z.enum(MOODS)).min(1),
-      /** One line for the index — what it is and when to reach for it. */
+      /** One line for the index; what it is and when to reach for it. */
       blurb: z.string().max(140),
 
       /** SPDX identifier, e.g. "OFL-1.1". */
@@ -67,7 +67,7 @@ const fonts = defineCollection({
       order: z.number().int().default(999),
 
       /**
-       * What this font is good for, and why. Each entry needs a reason — an
+       * What this font is good for, and why. Each entry needs a reason; an
        * untagged claim is worth less than no claim. Two or three is plenty.
        */
       bestFor: z

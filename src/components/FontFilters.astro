@@ -12,164 +12,327 @@ interface Props {
 const { classifications, moods, useCases, total } = Astro.props;
 ---
 
-<div class="mb-10 space-y-4" data-filters>
-  <div>
-    <p class="text-faint mb-2 text-xs font-medium tracking-wide uppercase">Style</p>
-    <div class="flex flex-wrap items-center gap-1.5">
-      {
-        classifications.map((c) => (
-          <button
-            type="button"
-            class="chip"
-            data-filter="classification"
-            data-value={c}
-            aria-pressed="false"
-          >
-            {CLASSIFICATION_LABELS[c]}
-          </button>
-        ))
-      }
-      <span class="bg-border mx-1 h-4 w-px" aria-hidden="true"></span>
-      {
-        moods.map((m) => (
-          <button type="button" class="chip" data-filter="mood" data-value={m} aria-pressed="false">
-            {m}
-          </button>
-        ))
-      }
-    </div>
-  </div>
+<div data-filters>
+  <h3 class="sr-only">Filter fonts</h3>
+  <p class="meta" data-count aria-live="polite" aria-atomic="true">{total} typefaces</p>
 
-  {
-    useCases.length > 0 && (
-      <div>
-        <p class="text-faint mb-2 text-xs font-medium tracking-wide uppercase">Good for</p>
-        <div class="flex flex-wrap items-center gap-1.5">
-          {useCases.map((u) => (
-            <button
-              type="button"
-              class="chip"
-              data-filter="use"
-              data-value={u}
-              aria-pressed="false"
-              title={USE_CASE_DESCRIPTIONS[u]}
-            >
-              {USE_CASE_LABELS[u]}
-            </button>
-          ))}
+  <!-- Controls need JS; without it the full catalogue simply shows. -->
+  <div data-js-only class="mt-5 space-y-4">
+    <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6">
+      <div class="md:w-80">
+        <label for="catalogue-search" class="text-ink mb-1.5 block text-sm font-medium">
+          Search typefaces
+        </label>
+        <input
+          id="catalogue-search"
+          type="search"
+          class="field"
+          placeholder="Name, designer, or description"
+          autocomplete="off"
+          data-search-input
+        />
+      </div>
+
+      <div role="group" aria-labelledby="style-label" class="min-w-0">
+        <p id="style-label" class="text-ink mb-1.5 text-sm font-medium">Style</p>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="chip" data-style-all aria-pressed="true">All</button>
+          {
+            classifications.map((c) => (
+              <button
+                type="button"
+                class="chip"
+                data-filter="classification"
+                data-value={c}
+                aria-pressed="false"
+              >
+                {CLASSIFICATION_LABELS[c]}
+              </button>
+            ))
+          }
         </div>
       </div>
-    )
-  }
+    </div>
 
-  <div class="text-muted flex items-center gap-3 pt-1 text-sm">
-    <span data-count>{total} typefaces</span>
-    <button type="button" class="hover:text-text hidden underline underline-offset-4" data-clear>
-      Clear filters
-    </button>
+    {
+      (moods.length > 0 || useCases.length > 0) && (
+        <details data-more class="group/more">
+          <summary class="text-ink hover:text-accent flex min-h-11 w-fit cursor-pointer list-none items-center gap-2 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+            <span class="border-control inline-block size-5 rounded border text-center text-base leading-[1.1rem]">
+              <span class="group-open/more:hidden" aria-hidden="true">+</span>
+              <span class="hidden group-open/more:inline" aria-hidden="true">&minus;</span>
+            </span>
+            More filters
+            <span class="text-ink-2 font-normal" data-more-count />
+          </summary>
+
+          <div class="mt-3 space-y-5">
+            {
+              moods.length > 0 && (
+                <div role="group" aria-labelledby="mood-label">
+                  <p id="mood-label" class="text-ink mb-1.5 text-sm font-medium">Mood</p>
+                  <div class="flex flex-wrap gap-2">
+                    {moods.map((m) => (
+                      <button
+                        type="button"
+                        class="chip capitalize"
+                        data-filter="mood"
+                        data-value={m}
+                        aria-pressed="false"
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            {
+              useCases.length > 0 && (
+                <div role="group" aria-labelledby="use-label">
+                  <p id="use-label" class="text-ink mb-1.5 text-sm font-medium">Good for</p>
+                  <div class="flex flex-wrap gap-2">
+                    {useCases.map((u) => (
+                      <button
+                        type="button"
+                        class="chip"
+                        data-filter="use"
+                        data-value={u}
+                        aria-pressed="false"
+                        title={USE_CASE_DESCRIPTIONS[u]}
+                      >
+                        {USE_CASE_LABELS[u]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+          </div>
+        </details>
+      )
+    }
+
+    <div class="flex flex-wrap items-center gap-2" data-tokens hidden>
+      <span class="meta">Active:</span>
+      <span class="contents" data-token-list></span>
+      <button
+        type="button"
+        class="text-ink hover:text-accent min-h-11 px-2 text-sm font-semibold underline underline-offset-4"
+        data-clear-all
+      >
+        Clear all
+      </button>
+    </div>
   </div>
 </div>
 
-<style>
-  .chip {
-    border: 1px solid var(--color-border);
-    border-radius: 9999px;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.8125rem;
-    color: var(--color-muted);
-    transition:
-      color 0.15s,
-      border-color 0.15s,
-      background-color 0.15s;
-  }
-  .chip[data-filter='mood'],
-  .chip[data-filter='classification'] {
-    text-transform: capitalize;
-  }
-  .chip:hover {
-    color: var(--color-text);
-  }
-  .chip[aria-pressed='true'] {
-    background-color: var(--color-accent);
-    border-color: var(--color-accent);
-    color: var(--color-accent-contrast);
-  }
-</style>
-
 <script>
   type Group = 'classification' | 'mood' | 'use';
+  const GROUPS: Group[] = ['classification', 'mood', 'use'];
+  // URL param per group (`use` kept for existing deep links).
+  const PARAM: Record<Group, string> = { classification: 'style', mood: 'mood', use: 'use' };
 
   const root = document.querySelector<HTMLElement>('[data-filters]');
   if (root) {
-    const chips = [...root.querySelectorAll<HTMLButtonElement>('.chip')];
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('button[data-filter]')];
+    const allBtn = root.querySelector<HTMLButtonElement>('[data-style-all]');
+    const searchEl = root.querySelector<HTMLInputElement>('[data-search-input]')!;
     const countEl = root.querySelector<HTMLElement>('[data-count]');
-    const clearBtn = root.querySelector<HTMLButtonElement>('[data-clear]');
-    const rows = [...document.querySelectorAll<HTMLElement>('[data-font]')];
+    const moreEl = root.querySelector<HTMLDetailsElement>('[data-more]');
+    const moreCount = root.querySelector<HTMLElement>('[data-more-count]');
+    const tokensEl = root.querySelector<HTMLElement>('[data-tokens]');
+    const tokenList = root.querySelector<HTMLElement>('[data-token-list]');
+    const rows = [
+      ...document.querySelectorAll<HTMLElement>('[data-catalogue-list] [data-font]'),
+    ];
+    const emptyEl = document.querySelector<HTMLElement>('[data-empty]');
+    const emptyDetail = document.querySelector<HTMLElement>('[data-empty-detail]');
+    const listEl = document.querySelector<HTMLElement>('[data-catalogue-list]');
+    const clearBtns = document.querySelectorAll<HTMLButtonElement>('[data-clear-all]');
+
+    const labelOf = new Map<HTMLButtonElement, string>(
+      chips.map((c) => [c, (c.textContent ?? '').trim()]),
+    );
+    const known: Record<Group, Set<string>> = {
+      classification: new Set(),
+      mood: new Set(),
+      use: new Set(),
+    };
+    for (const c of chips) known[c.dataset.filter as Group].add(c.dataset.value!);
 
     const active: Record<Group, Set<string>> = {
       classification: new Set(),
       mood: new Set(),
       use: new Set(),
     };
+    let query = '';
 
     const listOf = (row: HTMLElement, key: string) =>
       (row.dataset[key] ?? '').split(' ').filter(Boolean);
 
-    function apply() {
+    function matches(row: HTMLElement) {
+      const okCls =
+        active.classification.size === 0 ||
+        active.classification.has(row.dataset.classification ?? '');
+      const moods = listOf(row, 'moods');
+      const okMood = active.mood.size === 0 || [...active.mood].some((m) => moods.includes(m));
+      const uses = listOf(row, 'uses');
+      const okUse = active.use.size === 0 || [...active.use].some((u) => uses.includes(u));
+      const hay = row.dataset.search ?? '';
+      const okQuery = query.split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
+      return okCls && okMood && okUse && okQuery;
+    }
+
+    function describe() {
+      const parts: string[] = [];
+      if (query) parts.push(`search “${searchEl.value.trim()}”`);
+      for (const g of GROUPS) {
+        if (active[g].size === 0) continue;
+        const names = chips
+          .filter((c) => c.dataset.filter === g && active[g].has(c.dataset.value!))
+          .map((c) => labelOf.get(c)!);
+        const label = g === 'classification' ? 'style' : g === 'mood' ? 'mood' : 'good for';
+        parts.push(`${label}: ${names.join(' or ')}`);
+      }
+      return parts.join('; ');
+    }
+
+    function render() {
       let shown = 0;
       for (const row of rows) {
-        const okCls =
-          active.classification.size === 0 ||
-          active.classification.has(row.dataset.classification ?? '');
-        const moods = listOf(row, 'moods');
-        const okMood = active.mood.size === 0 || [...active.mood].some((m) => moods.includes(m));
-        const uses = listOf(row, 'uses');
-        const okUse = active.use.size === 0 || [...active.use].some((u) => uses.includes(u));
-
-        const visible = okCls && okMood && okUse;
-        row.hidden = !visible;
-        if (visible) shown++;
+        const ok = matches(row);
+        row.hidden = !ok;
+        if (ok) shown++;
       }
 
-      const anyActive = active.classification.size + active.mood.size + active.use.size > 0;
+      const nChips = GROUPS.reduce((n, g) => n + active[g].size, 0);
+      const filtered = nChips > 0 || query !== '';
       if (countEl) {
-        countEl.textContent = anyActive
+        countEl.textContent = filtered
           ? `${shown} of ${rows.length} typefaces`
           : `${rows.length} typefaces`;
       }
-      clearBtn?.classList.toggle('hidden', !anyActive);
+
+      for (const c of chips) {
+        c.setAttribute('aria-pressed', String(active[c.dataset.filter as Group].has(c.dataset.value!)));
+      }
+      allBtn?.setAttribute('aria-pressed', String(active.classification.size === 0));
+
+      const moreN = active.mood.size + active.use.size;
+      if (moreCount) moreCount.textContent = moreN > 0 ? `(${moreN} active)` : '';
+
+      // Active tokens
+      if (tokenList) {
+        tokenList.replaceChildren(
+          ...chips
+            .filter((c) => active[c.dataset.filter as Group].has(c.dataset.value!))
+            .map((c) => {
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.className =
+                'inline-flex min-h-11 items-center gap-1.5 rounded-full border border-accent bg-accent-wash px-3.5 text-sm font-semibold text-ink capitalize cursor-pointer';
+              b.dataset.removeGroup = c.dataset.filter;
+              b.dataset.removeValue = c.dataset.value;
+              b.setAttribute('aria-label', `Remove filter: ${labelOf.get(c)}`);
+              b.append(labelOf.get(c)!, Object.assign(document.createElement('span'), {
+                textContent: '×',
+                ariaHidden: 'true',
+              }));
+              return b;
+            }),
+        );
+      }
+      if (tokensEl) tokensEl.hidden = !filtered;
+
+      // Empty state
+      const none = shown === 0;
+      if (emptyEl) emptyEl.hidden = !none;
+      if (listEl) listEl.hidden = none;
+      if (emptyDetail) {
+        emptyDetail.textContent = none
+          ? `Active constraints: ${describe()}. Clear a filter or search to see more.`
+          : '';
+      }
     }
 
-    function toggle(chip: HTMLButtonElement, force?: boolean) {
-      const group = chip.dataset.filter as Group;
-      const value = chip.dataset.value!;
-      const set = active[group];
-      const on = force ?? !set.has(value);
-      if (on) set.add(value);
-      else set.delete(value);
-      chip.setAttribute('aria-pressed', String(on));
+    function writeUrl(push: boolean) {
+      const p = new URLSearchParams();
+      if (query) p.set('q', searchEl.value.trim());
+      for (const g of GROUPS) for (const v of active[g]) p.append(PARAM[g], v);
+      const qs = p.toString();
+      const url = location.pathname + (qs ? `?${qs}` : '') + location.hash;
+      if (url === location.pathname + location.search + location.hash) return;
+      if (push) history.pushState(null, '', url);
+      else history.replaceState(null, '', url);
     }
 
+    function readUrl() {
+      const p = new URLSearchParams(location.search);
+      const q = p.get('q') ?? '';
+      searchEl.value = q;
+      query = q.trim().toLowerCase();
+      for (const g of GROUPS) {
+        active[g] = new Set(p.getAll(PARAM[g]).filter((v) => known[g].has(v)));
+      }
+      if (active.mood.size + active.use.size > 0 && moreEl) moreEl.open = true;
+    }
+
+    // Chip toggles
     for (const chip of chips) {
       chip.addEventListener('click', () => {
-        toggle(chip);
-        apply();
+        const set = active[chip.dataset.filter as Group];
+        const v = chip.dataset.value!;
+        if (set.has(v)) set.delete(v);
+        else set.add(v);
+        render();
+        writeUrl(true);
+      });
+    }
+    // "All" clears only the Style group.
+    allBtn?.addEventListener('click', () => {
+      active.classification.clear();
+      render();
+      writeUrl(true);
+    });
+
+    // Search (history entry replaced while typing so Back isn't spammed)
+    searchEl.addEventListener('input', () => {
+      query = searchEl.value.trim().toLowerCase();
+      render();
+      writeUrl(false);
+    });
+    searchEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') e.preventDefault();
+    });
+
+    // Remove tokens (delegated; tokens are rebuilt on every render)
+    tokenList?.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-group]');
+      if (!btn) return;
+      active[btn.dataset.removeGroup as Group].delete(btn.dataset.removeValue!);
+      render();
+      writeUrl(true);
+      (tokenList.querySelector('button') ?? searchEl).focus();
+    });
+
+    for (const b of clearBtns) {
+      b.addEventListener('click', () => {
+        for (const g of GROUPS) active[g].clear();
+        query = '';
+        searchEl.value = '';
+        render();
+        writeUrl(true);
+        searchEl.focus();
       });
     }
 
-    clearBtn?.addEventListener('click', () => {
-      for (const set of Object.values(active)) set.clear();
-      for (const chip of chips) chip.setAttribute('aria-pressed', 'false');
-      apply();
-      history.replaceState(null, '', location.pathname);
+    window.addEventListener('popstate', () => {
+      readUrl();
+      render();
     });
 
-    // Deep link: /?use=dev-tools arrives from a "Best for" tag on a font page.
-    const preset = new URLSearchParams(location.search).getAll('use');
-    for (const value of preset) {
-      const chip = chips.find((c) => c.dataset.filter === 'use' && c.dataset.value === value);
-      if (chip) toggle(chip, true);
-    }
-    apply();
+    readUrl();
+    render();
   }
 </script>

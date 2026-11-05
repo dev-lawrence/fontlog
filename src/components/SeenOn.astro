@@ -30,54 +30,88 @@ const resolved = await Promise.all(
   }),
 );
 
+const withImage = resolved.filter((i) => i.resolvedImage);
+const citations = resolved.filter((i) => !i.resolvedImage);
+
+const cap = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : undefined);
+
 const monthFmt = (ym: string) => {
   const [y, m] = ym.split('-').map(Number);
   return new Date(y, m - 1).toLocaleDateString('en', { month: 'short', year: 'numeric' });
 };
 ---
 
-<ul class="grid gap-4 sm:grid-cols-2">
-  {
-    resolved.map((item) => (
-      <li>
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="group border-border bg-surface hover:border-accent block overflow-hidden rounded-lg border transition"
-        >
-          <div class="bg-bg aspect-[16/10] overflow-hidden">
-            {item.resolvedImage ? (
+{
+  withImage.length > 0 && (
+    <ul class="grid gap-5 sm:grid-cols-2">
+      {withImage.map((item) => (
+        <li class="flex">
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group border-divider bg-surface flex w-full flex-col overflow-hidden rounded-xl border transition-[border-color,box-shadow] duration-[170ms] hover:border-[var(--card-hover-border)] hover:shadow-[var(--shadow-card)]"
+          >
+            <div class="bg-raised aspect-[16/10] overflow-hidden">
               <Image
-                src={item.resolvedImage}
-                alt={`${item.site} — using the typeface`}
-                widths={[400, 800]}
-                sizes="(min-width: 640px) 33rem, 90vw"
-                class="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.02]"
+                src={item.resolvedImage!}
+                alt={`Screenshot of ${item.site}`}
+                widths={[480, 800, 1200]}
+                sizes="(min-width: 1024px) 36rem, (min-width: 640px) 45vw, 92vw"
+                class="h-full w-full object-cover object-top"
               />
-            ) : (
-              <div class="text-faint flex h-full w-full items-center justify-center text-xs">
-                screenshot pending
-              </div>
-            )}
-          </div>
-          <div class="flex items-start justify-between gap-3 px-3.5 py-3">
-            <div>
-              <p class="flex items-center gap-1 font-medium">
-                {item.site}
-                <Icon
-                  icon={ArrowUpRight01Icon}
-                  size={15}
-                  class="text-faint group-hover:text-accent transition"
-                />
-              </p>
-              <p class="text-muted text-[13px]">
-                {item.usage ?? 'in use'} &middot; {monthFmt(item.captured)}
-              </p>
             </div>
-          </div>
-        </a>
-      </li>
-    ))
-  }
-</ul>
+            <div class="flex items-start justify-between gap-3 p-4">
+              <div>
+                <p class="text-ink font-semibold">
+                  {item.site}
+                  <span class="sr-only"> (opens in a new tab)</span>
+                </p>
+                <p class="meta">
+                  {cap(item.usage) ?? 'In use'}
+                  <span aria-hidden="true"> · </span>
+                  Seen {monthFmt(item.captured)}
+                </p>
+              </div>
+              <Icon icon={ArrowUpRight01Icon} size={20} class="arrow text-accent mt-0.5 shrink-0" />
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+{
+  citations.length > 0 && (
+    <ul
+      class:list={[
+        'divide-divider border-divider divide-y border-y',
+        withImage.length > 0 && 'mt-6',
+      ]}
+    >
+      {citations.map((item) => (
+        <li>
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group flex min-h-12 items-center justify-between gap-3 py-3"
+          >
+            <span>
+              <span class="text-ink font-semibold">
+                {item.site}
+                <span class="sr-only"> (opens in a new tab)</span>
+              </span>
+              <span class="meta block sm:ml-3 sm:inline">
+                {cap(item.usage) ?? 'In use'}
+                <span aria-hidden="true"> · </span>
+                Seen {monthFmt(item.captured)}
+              </span>
+            </span>
+            <Icon icon={ArrowUpRight01Icon} size={20} class="arrow text-accent shrink-0" />
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}

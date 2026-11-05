@@ -1,106 +1,375 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/funnel-sans';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* --- Design tokens -------------------------------------------------------- */
-/* Near-monochrome + a single accent. The typefaces on the page are the only
-   real colour; the chrome stays out of the way. */
+/* ============================================================================
+   FONTLOG DESIGN TOKENS  (v2: cobalt primary, light-first)
+   ----------------------------------------------------------------------------
+   COLOUR  (Tailwind utilities work for bg-/text-/border-/ring-/outline-/fill-)
+     page          cool near-white / deep blue-black  -> bg-page
+     surface       controls, caption areas, panels    -> bg-surface
+     raised        hover + inset areas                -> bg-raised
+     ink           main text                          -> text-ink
+     ink-2         secondary text (4.5:1, OK for small metadata) -> text-ink-2
+     divider       quiet decorative rules             -> border-divider
+     control       boundaries of inputs / controls    -> border-control
+     accent        links, primary action, focus       -> bg-accent text-accent border-accent
+     accent-ink    text on an accent fill             -> text-accent-ink
+     accent-wash   selected chips / soft highlight    -> bg-accent-wash
+     accent-hover  hover fill for primary buttons
+     accent-soft   quiet accent borders / decorative tint
+     sand sage clay  specimen backdrops (now all cool tints of the accent;
+                     names kept so existing markup keeps working)
+   Legacy aliases kept so untouched pages keep working until restyled:
+     bg=page, text=ink, muted=ink-2, faint=ink-2, border=divider,
+     accent-contrast=accent-ink.
+
+   FONTS   font-heading -> var(--site-heading)  (default Bricolage Grotesque)
+           font-body    -> var(--site-body)     (default Funnel Sans; = font-sans)
+           The site-font switcher (src/scripts/site-font.ts) rewrites
+           --site-heading / --site-body on <html>. Code stays font-mono.
+           font-mono    (Inconsolata)
+   Specimens must use the catalogue font's own family, never these aliases.
+
+   TYPE HELPERS  .meta      14px / 20px secondary metadata
+                 .lede      18px / 28px editorial intro
+   COMPONENT UTILITIES
+     container-page   max 1248px, gutters 20 / 32 / 48px
+     prose-page       narrow reading column (max 66ch) for long copy
+     panel            surface bg + 1px divider border + 12px radius
+     btn              base for buttons/links: 44px high, 8px radius, 600
+       btn-primary    filled accent;  btn-quiet  surface + control border
+     field            text input / select: 44px, 8px radius, control border
+     chip             filter token (aria-pressed="true" => accent-wash + check)
+     link-arrow       wrap an <svg class="arrow"> inside a group link: moves 2px
+     data-specimen="sand|sage|clay|surface"  sets the specimen backdrop
+   SHADOW / RADIUS  --shadow-card (hover only), rounded-lg=8px, rounded-xl=12px
+   MOTION  --ease-ui + `duration-150`; reduced motion removes transforms and
+           transitions globally.
+   JS      <html> gets class `js` from the head script. Mark controls that are
+           useless without JS with `data-js-only`; they are hidden otherwise.
+   ============================================================================ */
 
 :root {
-  --bg: #fbfbfa;
+  --page: #f8f9fc;
   --surface: #ffffff;
-  --text: #14140f;
-  --muted: #6b6b63;
-  --faint: #9a9a90;
-  --border: #e6e5e0;
-  --accent: #2f5fe0;
-  --accent-contrast: #ffffff;
+  --raised: #eff1f7;
+  --ink: #12141c;
+  --ink-2: #555c6e;
+  --divider: #e1e4ee;
+  --control: #7d869e;
+  --accent: #3451e8;
+  --accent-hover: #253cc5;
+  --accent-ink: #ffffff;
+  --accent-wash: #eef1ff;
+  --accent-soft: #c9d2fb;
+  /* Specimen backdrops: one cool family instead of per-font colours. */
+  --sand: #eef1ff;
+  --sage: #f2f4f9;
+  --clay: #eef1ff;
+  --shadow-card: 0 1px 2px rgb(18 20 28 / 0.04), 0 8px 24px rgb(18 20 28 / 0.06);
+  --card-hover-border: var(--accent-soft);
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Site type roles. The site-font switcher overrides --site-heading / --site-body
+     on <html>; --default-* are what Reset returns to. */
+  --default-heading:
+    'Bricolage Grotesque Variable', 'Funnel Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --default-body:
+    'Funnel Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --site-heading: var(--default-heading);
+  --site-body: var(--default-body);
 }
 
 .dark {
-  --bg: #0c0c0b;
-  --surface: #141412;
-  --text: #ededea;
-  --muted: #9a9a90;
-  --faint: #6b6b63;
-  --border: #262622;
-  --accent: #7ea2ff;
-  --accent-contrast: #0c0c0b;
+  --page: #0f1118;
+  --surface: #171a24;
+  --raised: #222738;
+  --ink: #f4f6ff;
+  --ink-2: #b4bcd2;
+  --divider: #2c3246;
+  --control: #76829d;
+  --accent: #9baeff;
+  --accent-hover: #b8c6ff;
+  --accent-ink: #0f1118;
+  --accent-wash: #232d55;
+  --accent-soft: #3b4a8a;
+  --sand: #1c2238;
+  --sage: #1a1e2b;
+  --clay: #1c2238;
+  --shadow-card: none;
+  --card-hover-border: var(--accent-soft);
 }
 
 @theme inline {
-  --color-bg: var(--bg);
+  --color-page: var(--page);
   --color-surface: var(--surface);
-  --color-text: var(--text);
-  --color-muted: var(--muted);
-  --color-faint: var(--faint);
-  --color-border: var(--border);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-divider: var(--divider);
+  --color-control: var(--control);
   --color-accent: var(--accent);
-  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-soft: var(--accent-soft);
+  --color-sand: var(--sand);
+  --color-sage: var(--sage);
+  --color-clay: var(--clay);
 
-  --font-sans:
-    'Funnel Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Legacy aliases (pages not yet migrated). */
+  --color-bg: var(--page);
+  --color-text: var(--ink);
+  --color-muted: var(--ink-2);
+  --color-faint: var(--ink-2);
+  --color-border: var(--divider);
+  --color-accent-contrast: var(--accent-ink);
+
+  --font-heading: var(--site-heading);
+  --font-body: var(--site-body);
+  --font-sans: var(--site-body);
   --font-mono:
-    ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    'Inconsolata Variable', ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 }
 
 /* --- Base --------------------------------------------------------------- */
 
 html {
-  color-scheme: light dark;
+  color-scheme: light;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+[hidden] {
+  display: none !important;
+}
+html:not(.js) [data-js-only] {
+  display: none !important;
+}
+
+body {
+  background-color: var(--page);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.625;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+  }
+}
+
+::selection {
+  background-color: color-mix(in oklab, var(--accent) 28%, transparent);
+}
+
+@layer base {
+  a {
+    color: inherit;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .link-arrow .arrow,
+  .group:hover .arrow {
+    transform: none !important;
+  }
 }
 
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
+/* --- Layout + type helpers ---------------------------------------------- */
 
-::selection {
-  background-color: color-mix(in oklab, var(--color-accent) 24%, transparent);
-}
-
-a {
-  color: inherit;
-}
-
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-/* Utility: the wrapper every page shares. */
 @utility container-page {
   width: 100%;
-  max-width: 68rem;
+  max-width: 78rem;
   margin-inline: auto;
-  padding-inline: 1.5rem;
+  padding-inline: 1.25rem;
+  @media (min-width: 640px) {
+    padding-inline: 2rem;
+  }
+  @media (min-width: 1024px) {
+    padding-inline: 3rem;
+  }
 }
 
-/* Long-form prose — the personal note on each font page, About copy. */
+@utility prose-page {
+  max-width: 66ch;
+}
+
+@utility meta {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--ink-2);
+}
+
+@utility lede {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  color: var(--ink-2);
+}
+
+/* --- Surfaces + controls ------------------------------------------------- */
+
+@utility panel {
+  background-color: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 0.75rem;
+}
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.125rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 140ms var(--ease-ui),
+    border-color 140ms var(--ease-ui),
+    color 140ms var(--ease-ui);
+}
+
+@utility btn-primary {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+  &:hover {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+}
+
+@utility btn-quiet {
+  background-color: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--control);
+  &:hover {
+    background-color: var(--raised);
+  }
+}
+
+@utility field {
+  min-height: 2.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--control);
+  background-color: var(--surface);
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.25rem;
+  &::placeholder {
+    color: var(--ink-2);
+  }
+}
+
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  padding: 0.25rem 0.875rem;
+  border-radius: 9999px;
+  border: 1px solid var(--control);
+  background-color: var(--surface);
+  color: var(--ink);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  cursor: pointer;
+  transition:
+    background-color 140ms var(--ease-ui),
+    border-color 140ms var(--ease-ui);
+  &:hover {
+    background-color: var(--raised);
+  }
+  &[aria-pressed='true'] {
+    background-color: var(--accent-wash);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  &[aria-pressed='true']::before {
+    content: '\2713';
+    font-size: 0.8125rem;
+  }
+}
+
+/* Specimen backdrops: <div data-specimen="sand"> */
+[data-specimen='sand'] {
+  background-color: var(--sand);
+}
+[data-specimen='sage'] {
+  background-color: var(--sage);
+}
+[data-specimen='clay'] {
+  background-color: var(--clay);
+}
+[data-specimen='surface'] {
+  background-color: var(--surface);
+}
+[data-specimen] {
+  color: var(--ink);
+}
+
+.link-arrow .arrow,
+.group .arrow {
+  transition: transform 160ms var(--ease-ui);
+}
+.group:hover .arrow,
+.group:focus-visible .arrow {
+  transform: translateX(2px);
+}
+
+/* --- Long-form prose ------------------------------------------------------ */
+
 .prose {
   line-height: 1.7;
-  color: var(--color-text);
+  color: var(--ink);
 }
 .prose > * + * {
   margin-top: 1.15em;
 }
 .prose h2 {
   margin-top: 1.8em;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -109,21 +378,22 @@ a {
   font-weight: 600;
 }
 .prose a {
+  color: var(--accent);
   text-decoration: underline;
-  text-decoration-color: var(--color-border);
+  text-decoration-color: var(--divider);
   text-underline-offset: 3px;
 }
 .prose a:hover {
-  text-decoration-color: var(--color-accent);
+  text-decoration-color: var(--accent);
 }
 .prose strong {
   font-weight: 600;
 }
 .prose code {
   font-family: var(--font-mono);
-  font-size: 0.9em;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  font-size: 0.95em;
+  background: var(--surface);
+  border: 1px solid var(--divider);
   border-radius: 4px;
   padding: 0.1em 0.35em;
 }
@@ -136,7 +406,7 @@ a {
   padding-left: 1.25em;
 }
 .prose blockquote {
-  border-left: 2px solid var(--color-border);
+  border-left: 2px solid var(--divider);
   padding-left: 1em;
-  color: var(--color-muted);
+  color: var(--ink-2);
 }
