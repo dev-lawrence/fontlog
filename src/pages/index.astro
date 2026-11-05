@@ -108,7 +108,7 @@ const faqs = [
             <p class="text-white/90">Now showing</p>
             <p class="text-base font-semibold text-white" data-glyph-name>Bricolage Grotesque</p>
           </div>
-          <p class="rounded-full bg-white/12 px-3 py-1 tabular-nums" data-glyph-readout>wght 600</p>
+          <p class="shrink-0 rounded-full bg-white/12 px-3 py-1 tabular-nums" data-glyph-readout>wght 600</p>
         </div>
 
         <div class="relative flex flex-1 items-center justify-center" aria-hidden="true">
@@ -146,9 +146,10 @@ const faqs = [
     <div class="hidden justify-end px-5 pt-3 sm:px-8 lg:px-12 [html.js_&]:flex" data-marquee-controls>
       <button
         type="button"
-        class="border-divider bg-surface text-ink-2 hover:text-ink rounded-full border px-3.5 py-1.5 text-sm font-semibold shadow-sm"
+        class="btn btn-quiet rounded-full px-3.5 text-sm"
         data-marquee-pause
         aria-controls="marquee-track"
+        aria-label="Pause font animation"
       >
         Pause
       </button>
@@ -209,10 +210,10 @@ const faqs = [
         maxlength="80"
         placeholder="Type something. Every card will use it."
         autocomplete="off"
-        class="text-ink placeholder:text-ink-2 min-h-11 flex-1 rounded-xl bg-transparent px-3 text-base outline-none focus-visible:outline-2 focus-visible:outline-offset-0"
+        class="text-ink placeholder:text-ink-2 min-h-11 min-w-0 flex-1 rounded-xl bg-transparent px-3 text-base outline-none focus-visible:outline-2 focus-visible:outline-offset-0"
         data-sample-input
       />
-      <div role="radiogroup" aria-label="Preview size" class="bg-raised grid grid-cols-2 gap-1 rounded-xl p-1 sm:w-56">
+      <div role="radiogroup" aria-label="Preview size" class="bg-raised grid grid-cols-2 gap-1 rounded-xl p-1 sm:w-56 sm:shrink-0">
         <button type="button" role="radio" aria-checked="true" data-lens="display" class="text-ink-2 aria-checked:bg-surface aria-checked:text-ink min-h-9 rounded-lg text-sm font-medium aria-checked:shadow-sm">Display</button>
         <button type="button" role="radio" aria-checked="false" data-lens="read" tabindex="-1" class="text-ink-2 aria-checked:bg-surface aria-checked:text-ink min-h-9 rounded-lg text-sm font-medium aria-checked:shadow-sm">Reading</button>
       </div>
@@ -329,7 +330,7 @@ const faqs = [
     appearance: none;
     min-height: 3rem;
     padding-inline: 1rem 2.75rem;
-    border-color: var(--divider);
+    border-color: var(--control);
     border-radius: 0.75rem;
     cursor: pointer;
     transition: border-color 140ms var(--ease-ui);
@@ -386,6 +387,10 @@ const faqs = [
     accent-color: #fff;
   }
 
+  .glyph-range:focus-visible {
+    outline-color: #fff;
+  }
+
   /* Name strip */
   .marquee-mask {
     mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
@@ -394,9 +399,25 @@ const faqs = [
     animation: marquee 48s linear infinite;
   }
   [data-marquee]:hover .marquee-track,
-  [data-marquee]:focus-within .marquee-track,
   [data-marquee][data-paused] .marquee-track {
     animation-play-state: paused;
+  }
+  /* Keyboard navigation uses a static, scrollable strip with an unmasked focus ring. */
+  .marquee-mask[data-browsing] {
+    overflow-x: auto;
+    mask-image: none;
+    padding-inline: 1.25rem;
+  }
+  .marquee-mask[data-browsing] .marquee-track {
+    animation: none;
+  }
+  :global(html:not(.js)) .marquee-mask {
+    overflow-x: auto;
+    mask-image: none;
+    padding-inline: 1.25rem;
+  }
+  :global(html:not(.js)) .marquee-track > ul[aria-hidden] {
+    display: none;
   }
   @keyframes marquee {
     to {
@@ -409,6 +430,11 @@ const faqs = [
     }
     .marquee-mask {
       overflow-x: auto;
+      mask-image: none;
+      padding-inline: 1.25rem;
+    }
+    .marquee-track > ul[aria-hidden] {
+      display: none;
     }
     [data-marquee-controls] {
       display: none !important;
@@ -483,6 +509,25 @@ const faqs = [
   pauseBtn?.addEventListener('click', () => {
     const paused = marquee!.toggleAttribute('data-paused');
     pauseBtn.textContent = paused ? 'Play' : 'Pause';
+    pauseBtn.setAttribute('aria-label', paused ? 'Play font animation' : 'Pause font animation');
+  });
+
+  marquee?.addEventListener('focusin', (event) => {
+    const target = event.target as HTMLElement;
+    const mask = target.closest('.marquee-mask');
+    if (mask) {
+      mask.setAttribute('data-browsing', '');
+      target.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'instant' });
+      const bounds = target.getBoundingClientRect();
+      mask.scrollLeft += bounds.left - mask.getBoundingClientRect().left - (mask.clientWidth - bounds.width) / 2;
+    }
+  });
+
+  marquee?.addEventListener('focusout', () => {
+    queueMicrotask(() => {
+      const mask = marquee.querySelector('.marquee-mask');
+      if (!mask?.contains(document.activeElement)) mask?.removeAttribute('data-browsing');
+    });
   });
 
   /* ---------- Glyph card ---------- */

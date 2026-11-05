@@ -148,6 +148,11 @@ html {
 html.dark {
   color-scheme: dark;
 }
+@media (max-width: 639px) {
+  html {
+    scroll-padding-top: 6.5rem;
+  }
+}
 
 [hidden] {
   display: none !important;

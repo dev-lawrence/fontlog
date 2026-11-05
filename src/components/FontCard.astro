@@ -61,11 +61,11 @@ const filterAttrs = filterable
       </a>
     </li>
   ) : (
-    <li class:list={['relative flex', className]} data-card={font.id} {...filterAttrs}>
+    <li class:list={['relative flex min-w-0', className]} data-card={font.id} {...filterAttrs}>
       <article class="group border-divider bg-surface hover:border-[var(--card-hover-border)] data-[wearing]:border-accent data-[wearing]:ring-accent flex w-full flex-col rounded-2xl border transition-[border-color,box-shadow] duration-[170ms] hover:shadow-[var(--shadow-card)] data-[wearing]:ring-1" data-card-body>
         <header class="flex items-center justify-between gap-3 px-5 pt-5 sm:px-6 sm:pt-6">
           <div class="min-w-0">
-            <h3 class="font-body text-ink truncate text-base font-semibold">{d.name}</h3>
+            <h3 class="font-body text-ink break-words text-base font-semibold">{d.name}</h3>
             <p class="meta">
               {CLASSIFICATION_LABELS[d.classification]} <span aria-hidden="true">·</span> {weightMeta}
             </p>
@@ -90,7 +90,7 @@ const filterAttrs = filterable
             Make it yours.
           </span>
           <span
-            class="hidden text-[1.1875rem] leading-[1.6] text-pretty group-data-[lens=read]/list:block"
+            class="hidden text-[1.1875rem] leading-[1.6] text-pretty [overflow-wrap:anywhere] group-data-[lens=read]/list:block"
             style="font-weight:400"
             data-sample-read
           >
