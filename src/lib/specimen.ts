@@ -12,8 +12,10 @@ const THEMES: Record<string, SpecimenTheme> = {
   'crimson-text': 'clay',
   'schibsted-grotesk': 'sage',
   inter: 'surface',
+  'inter-tight': 'sage',
   geist: 'sand',
   'dm-sans': 'sage',
+  poppins: 'clay',
   geom: 'clay',
 };
 

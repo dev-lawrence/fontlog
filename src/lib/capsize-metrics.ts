@@ -15,8 +15,10 @@ import crimsonText from '@capsizecss/metrics/crimsonText';
 import instrumentSerif from '@capsizecss/metrics/instrumentSerif';
 import schibstedGrotesk from '@capsizecss/metrics/schibstedGrotesk';
 import inter from '@capsizecss/metrics/inter';
+import interTight from '@capsizecss/metrics/interTight';
 import geist from '@capsizecss/metrics/geist';
 import dmSans from '@capsizecss/metrics/dMSans';
+import poppins from '@capsizecss/metrics/poppins';
 
 import arial from '@capsizecss/metrics/arial';
 import timesNewRoman from '@capsizecss/metrics/timesNewRoman';
@@ -33,8 +35,10 @@ export const FONT_METRICS: Record<string, FontMetrics> = {
   'instrument-serif': instrumentSerif,
   'schibsted-grotesk': schibstedGrotesk,
   inter,
+  'inter-tight': interTight,
   geist,
   'dm-sans': dmSans,
+  poppins,
 };
 
 /** System face each classification falls back to (must be widely pre-installed). */
