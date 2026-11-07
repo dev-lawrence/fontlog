@@ -12,6 +12,7 @@ import recursive from '@capsizecss/metrics/recursive';
 import inconsolata from '@capsizecss/metrics/inconsolata';
 import funnelSans from '@capsizecss/metrics/funnelSans';
 import crimsonText from '@capsizecss/metrics/crimsonText';
+import instrumentSerif from '@capsizecss/metrics/instrumentSerif';
 import schibstedGrotesk from '@capsizecss/metrics/schibstedGrotesk';
 import inter from '@capsizecss/metrics/inter';
 import geist from '@capsizecss/metrics/geist';
@@ -29,6 +30,7 @@ export const FONT_METRICS: Record<string, FontMetrics> = {
   inconsolata,
   'funnel-sans': funnelSans,
   'crimson-text': crimsonText,
+  'instrument-serif': instrumentSerif,
   'schibsted-grotesk': schibstedGrotesk,
   inter,
   geist,
