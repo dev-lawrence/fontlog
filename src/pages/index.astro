@@ -143,17 +143,6 @@ const faqs = [
 
   <!-- ──────────────────────── Name strip (marquee) ─────────────────────── -->
   <section aria-label="Every font in the log" class="relative -mx-5 sm:-mx-8 lg:-mx-12" data-marquee>
-    <div class="hidden justify-end px-5 pt-3 sm:px-8 lg:px-12 [html.js_&]:flex" data-marquee-controls>
-      <button
-        type="button"
-        class="btn btn-quiet rounded-full px-3.5 text-sm"
-        data-marquee-pause
-        aria-controls="marquee-track"
-        aria-label="Pause font animation"
-      >
-        Pause
-      </button>
-    </div>
     <div class="marquee-mask overflow-hidden py-3">
       <div id="marquee-track" class="marquee-track flex w-max gap-3" data-marquee-track>
         {
@@ -398,8 +387,7 @@ const faqs = [
   :global(html.js) .marquee-track {
     animation: marquee 48s linear infinite;
   }
-  [data-marquee]:hover .marquee-track,
-  [data-marquee][data-paused] .marquee-track {
+  [data-marquee]:hover .marquee-track {
     animation-play-state: paused;
   }
   /* Keyboard navigation uses a static, scrollable strip with an unmasked focus ring. */
@@ -435,9 +423,6 @@ const faqs = [
     }
     .marquee-track > ul[aria-hidden] {
       display: none;
-    }
-    [data-marquee-controls] {
-      display: none !important;
     }
   }
 
@@ -503,14 +488,8 @@ const faqs = [
   renderWear();
   subscribe(renderWear);
 
-  /* ---------- Marquee pause ---------- */
+  /* ---------- Marquee keyboard navigation ---------- */
   const marquee = document.querySelector<HTMLElement>('[data-marquee]');
-  const pauseBtn = document.querySelector<HTMLButtonElement>('[data-marquee-pause]');
-  pauseBtn?.addEventListener('click', () => {
-    const paused = marquee!.toggleAttribute('data-paused');
-    pauseBtn.textContent = paused ? 'Play' : 'Pause';
-    pauseBtn.setAttribute('aria-label', paused ? 'Play font animation' : 'Pause font animation');
-  });
 
   marquee?.addEventListener('focusin', (event) => {
     const target = event.target as HTMLElement;
